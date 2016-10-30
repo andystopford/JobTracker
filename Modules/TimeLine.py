@@ -10,13 +10,15 @@ class TimeLine:
         self.curr_time = 0
         self.time_list = []
         self.point_list = []
+        self.event_count = 0
 
     def set_time_slider(self, point_list):
         """ Sets time_slider range. """
         start = int(point_list[0].time)
         end = int(point_list[-1].time)
         time = end - start
-        self.parent.ui.time_slider.setRange(0, time)
+        return start, end, time
+
     
     def get_curr_time(self, time, point_list):
         """ Displays time_slider slider setting and send list of point
@@ -28,11 +30,10 @@ class TimeLine:
             point_time = point.time
             point_time -= start
             time_list.append(point_time)
-        timeConverter = TimeConverter()
-        display = timeConverter.get_time_hrs_mins(self.curr_time)
-        display = str(display[0]) + ':' + str(display[1])
-        self.parent.ui.time_display.setText(display)
+        tc = TimeConverter()
+        display = tc.get_time_hrs_mins(self.curr_time)
         self.bisect(time_list, start)
+        return display
     
     def bisect(self, time_list, start):
         """ Compares the parent.time_slider slider setting with
@@ -40,16 +41,19 @@ class TimeLine:
         and after """
         sel_time = self.parent.ui.time_slider.value()
         pos = bisect_left(time_list, sel_time)
+        """
         if pos == 0:
             return time_list[0] # where's it returning to?
         if pos == len(time_list):
             return time_list[-1]
+        """
         before = time_list[pos - 1]
         after = time_list[pos]
         self.get_coords(before, after, start)
     
     def get_coords(self, before, after, start):
-        """ Gets coordinates for before/after pair """
+        """ Gets coordinates for before/after pair.
+        TODO use this to get points for track segment"""
         for point in self.parent.point_list:
             if point.time - start == before:
                 bef_lat = point.lat
@@ -100,18 +104,19 @@ class TimeLine:
         hours worked.
         Allows times to be changed and recalculates total.
         """
-        timeConverter = TimeConverter()
+        tc = TimeConverter()
+        if self.event_count >= 2:
+            self.zero_time_list()
+            self.event_count = 0
         self.time_list.append(self.curr_time)
         start = self.time_list[0]
         finish = self.time_list[-1]
         hours = finish - start
-        start_time = timeConverter.get_time_hrs_mins(start)
-        start_time = str('Start:' + ' ' + start_time[0]) + ':' + str(start_time[1])
-        end_time = timeConverter.get_time_hrs_mins(finish)
-        end_time = str('End:' + ' ' + end_time[0]) + ':' + str(end_time[1])
-        hours_done = timeConverter.get_time_hrs_mins(hours)
-        hours_done = str('Hours:' + ' ' + hours_done[0]) + ':' + str(hours_done[1])
+        start_time = tc.get_time_hrs_mins(start)
+        end_time = tc.get_time_hrs_mins(finish)
+        hours_done = tc.get_time_hrs_mins(hours)
         # positions
         self.point_list.append(self.time_posn)
+        self.event_count += 1
         # return to JT key_press_event
         return start_time, end_time, hours_done, self.point_list

@@ -51,6 +51,7 @@ class Model(QtGui.QStandardItemModel):
         return date_list
 
     def tag_day(self, date, tag):
+        """Colour codes days in YearView for work/other"""
         day = date.day()
         month = date.month()
         year = date.year()
@@ -64,6 +65,23 @@ class Model(QtGui.QStandardItemModel):
             # Other i.e. not working
             item.setBackground(QtGui.QColor(109, 255, 174))
 
-
+    def add_start_stop(self, date, start, end, total):
+        day = date.day()
+        month = date.month()
+        year = date.year()
+        year_instance = Year(self, year)
+        col = year_instance.get_column(month, day)
+        row = month - 1
+        item = self.item(row, col)
+        start_item = QtGui.QStandardItem()
+        end_item = QtGui.QStandardItem()
+        total_item = QtGui.QStandardItem()
+        item.setChild(1, 0, start_item)
+        item.setChild(1, 1, end_item)
+        item.setChild(1, 2, total_item)
+        start_item.setData(start)
+        end_item.setData(end)
+        total_item.setData(total)
+        return item
 
 

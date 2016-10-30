@@ -1,5 +1,6 @@
 from PyQt4 import QtCore, QtGui, QtWebKit
 import sys
+import json
 sys.path.append('./Scripts/')
 
 
@@ -20,6 +21,7 @@ class MapView(QtWebKit.QWebView):
     def draw_track(self, point_list):
         # a_point = TrackPoint(pointID, time, lat, lon, course)
         self.frame.evaluateJavaScript('del_track();')
+        self.frame.evaluateJavaScript('clear_layer_grp();')
         place_list = []
         for item in point_list:
             lat = str(item.get_lat())
@@ -33,19 +35,22 @@ class MapView(QtWebKit.QWebView):
     def zoom_tracker(self):
         self.frame.evaluateJavaScript('center_on_marker();')
 
-    def marker_calc(self, time_events):
+    def marker_calc(self, time, time_events):
         """time_events = list of lat longs"""
-        # pairs = [time_events[i:i + 2] for i in range(0, len(time_events), 2)]
+        #pairs = [time_events[i:i + 2] for i in range(0, len(time_events), 2)]
+        #print(pairs)
         if len(time_events) == 1:
-            self.draw_start(time_events[0])
+            self.draw_start(time_events[0], time)
         else:
-            self.frame.evaluateJavaScript('del_end();')
             self.draw_end(time_events[-1])
 
-    def draw_start(self, start):
+    def draw_start(self, start, time):
         start_lat = start[0]
         start_lon = start[1]
-        self.frame.evaluateJavaScript('add_start({}, {})'.format(start_lat, start_lon))
+        block = str(self.parent.time_block)
+        time = str('<b>' + 'Block' + ' ' + block + ':' + '</b><br>' + time)
+        time = json.dumps(time) # Convert Python string to JS
+        self.frame.evaluateJavaScript('add_start({}, {}, {})'.format(start_lat, start_lon, time))
         self.frame.evaluateJavaScript('add_layer_grp();')
 
     def draw_end(self, end):

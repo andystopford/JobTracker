@@ -3,7 +3,7 @@ from PyQt4 import QtCore, QtGui, Qt
 
 class DateDisplay(QtGui.QStyledItemDelegate):
     def __init__(self, parent):
-        """ dataChanged() to refresh? or beginResetModel()/endResetModel()"""
+        """Colour codes any days with existing GPS files and fills in date text"""
         super(DateDisplay, self).__init__(parent)
         self.date_list =[]
         self.log_list = []
@@ -26,10 +26,6 @@ class DateDisplay(QtGui.QStyledItemDelegate):
         left_tri1 = QtCore.QPoint(option.rect.x() + cell_x, option.rect.y())
         left_tri2 = QtCore.QPoint(option.rect.x(), option.rect.y())
         left_tri3 = QtCore.QPoint(option.rect.x(), option.rect.y() + cell_y)
-        # Bottom right triangle
-        right_tri1 = QtCore.QPoint(option.rect.x() - cell_x, option.rect.y())
-        right_tri2 = QtCore.QPoint(option.rect.x(), option.rect.y())
-        right_tri3 = QtCore.QPoint(option.rect.x(), option.rect.y() - cell_y)
 
         for date in self.date_list:
             row = date[1]  # month

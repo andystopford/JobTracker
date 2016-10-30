@@ -25,8 +25,6 @@ function add_track(latlngs) {
 
 function del_track() {
     map.removeLayer(track);
-    map.removeLayer(start_layer);
-    map.removeLayer(end_layer);
     }
 
 // draw a marker to follow the track
@@ -44,12 +42,16 @@ function center_on_marker() {
     map.fitBounds(markerBounds);
     }
 ////////////////////////////////////////////////////////////
-// Layer group
-//var grp = L.layerGroup().addTo(map);
+// Layer group for start/finish markers
+var grp = L.layerGroup().addTo(map);
 
-function add_layer_grp() {
-    grp = L.layerGroup().addTo(map); // implicit global
-    grp.addLayer(start_layer);
+//function add_layer_grp() {
+    //grp = L.layerGroup().addTo(map); // implicit global
+    //grp.addLayer(start_layer);
+    //}
+
+function clear_layer_grp() {
+    grp.clearLayers()
     }
 
 function test() {
@@ -64,9 +66,10 @@ function test() {
 
 /////////////////////////////////////////////////////////////
 // start and end markers
-function add_start(lat, lng) {
+function add_start(lat, lng, time) {
     start_layer = L.marker([lat, lng], {icon: startIcon});
-    start_layer.addTo(map)
+    grp.addLayer(start_layer);
+    start_layer.bindPopup(time).openPopup();
     ;}
 
 var endIcon = new L.Icon({
@@ -79,7 +82,7 @@ var endIcon = new L.Icon({
 
 function add_end(lat, lng) {
     end_layer = L.marker([lat, lng], {icon: endIcon});
-    end_layer.addTo(map)
+    grp.addLayer(end_layer)
     ;}
 
 function del_end() {
