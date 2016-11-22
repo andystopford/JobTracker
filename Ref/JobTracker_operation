@@ -1,0 +1,106 @@
+JobTracker.py
+On startup():
+    init_model():
+        an instance of Model() is initialised and added to self.model_dict.
+        The model is instantiated for the current year using Year(), which
+        works out where the year's dates should go in the model, i.e. the
+        row and column for each.
+
+    setup_year():
+        setModel(self.model) is called for self.ui.yearView which displays
+        colour-coded backgrounds for weekdays/ends.
+        An instance of DataIO() is created which returns a list of GPS
+        logs for the current year.
+        The log list is sent to self.dateDisplay which colours in self.ui.
+        yearView's cells according to the log contents, and draws the text
+        for each date, e.g. 01, ...., 30, etc.
+
+Interaction:
+    year_back():
+        calls init_model() to create a new model instance. The previous
+        one is retained in self.model_dict.
+
+    year_forward():
+        as above
+
+    get_curr_time(time):
+        Displays time slider current value. Called by changing the
+        slider value.
+
+    select_date(indices):
+        Clicking on a cell in self.yearView calls this with the selected
+        indices as argument.
+        The corresponding date is found from self.model, displayed and
+        the time_- and point_lists in sel.timeLine are zeroed.
+        Any data in self.tableModel is cleared and hence self.time_table.
+        self.get_track(date) is called.
+
+    get_track(date):
+        An instance of GpsAnalyser is created and its getData() method
+        called. This reads the GPS file for the day and returns a list
+        of points, which fill self.point_list. This list is sent to self.
+        ui.mapView.draw_track().
+        The time_slider range is set from the first and last times in
+        the list, and these times displayed in the ui.
+
+    keyPressEvent():
+        When the mapView or time_slider have focus, pressing the (right
+        hand) enter key acquires the current time_slider value from
+        self.ui.timeLine.mark_time() which returns a list (time_events)
+        of start_time, end_time, hours_done, and a list of start and end
+        points. the times are converted to hrs:min strings by
+        TimeConverter() instance.
+        self.display_times(time_events) is then called.
+        Pressing the Z key zooms to the current track position in self.
+        mapView.
+
+    display_times(time_events):
+        Displays start, end and hours for the time event (this may
+        be removed along with the displays).
+        Calls self.ui.mapView.marker_calc(time_events[0], time_events[3])
+        to draw start and end markers.
+        If a start and end time have been selected,
+        self.add_times(time_events) is called.
+
+    add_times(time_events):
+        Calls epoch.add_start_end(start, end, hours) for the epoch
+        for the selected date. This means that the model now carries
+        that event in the date's epoch, appended to the epoch's
+        event_list.
+        self.tableModel has a row inserted so that self.ui.time_table
+        displays the event (start, end, hours)
+
+#######################################################################
+Model.py
+Sub-classes QtGui.QStandardItemModel.
+    init():
+        Creates header labels (Days of the week and Months).
+        Colour-codes cell backgrounds for weekdays/ends and inserts
+        QStandardItems in each.
+
+    set_year(year):
+        called from JobTracker.py in setup_year().
+        Works out where the dates should be in the YearView for the
+        current year from the month_list returned from the
+        get_months method of a Year() instance.
+        Initialises a QtGui.QStandardItem() for each valid day's
+        date (a QtCore.QDate) and epoch_item, which is a holder
+        for the day's Epoch() instance.
+
+#######################################################################
+DateDisplay.py
+Sub-classes QtGui.QStyledItemDelegate.
+Uses painter to draw triangle flags to mark cells and to write the
+date text on top.
+
+#######################################################################
+
+
+
+
+
+
+
+
+
+

@@ -19,12 +19,6 @@ class TimeConverter:
         formatted = hours + ':' + mins
         return formatted
 
-    def stringified_hrs_mins(self, time):
-        # TODO not necessary
-        int_times = self.get_time_hrs_mins(time)
-        str_time = int_times[0] + ':' + int_times[1]
-        return str_time
-
     def get_time_hrs_mins_secs(self, time):
         hours = int(time / 3600)
         mins = int(time / 60)

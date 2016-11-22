@@ -22,15 +22,8 @@ class YearView(QtGui.QTableView):
                      self.get_selection)
 
     def get_selection(self):
-        index = self.selectedIndexes()[0]
-        day = self.parent.model.itemFromIndex(index)
-        date = day.child(0, 1).data()   # QDate, e.g. (2016, 7, 15)
-        self.parent.get_track(date)
-        self.parent.ui.date_display.setText(date.toString())
-        self.parent.ui.timeLine.zero_time_list()
-        self.parent.time_block = 1
-        self.parent.selected_indices = self.selectedIndexes()
-        self.parent.tableModel.clear()
+        indices = self.selectedIndexes()
+        self.parent.select_date(indices)
 
     def right_click(self):
         menu = QtGui.QMenu(self)

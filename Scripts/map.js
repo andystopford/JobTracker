@@ -5,6 +5,7 @@ L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' +
         '<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'}).addTo(map);
 
+L.control.scale().addTo(map);
 
 if(typeof MainWindow != 'undefined') {
     var onMapMove = function() { MainWindow.onMapMove(map.getCenter().lat, map.getCenter().lng) ;}
@@ -12,15 +13,13 @@ if(typeof MainWindow != 'undefined') {
     onMapMove();
 }
 
-function move(lat, lng) {
-marker.setLatLng([lat, lng]);}
-
 // Draw track from GPS points
 var track = L.polyline({color: 'red'});
 
 function add_track(latlngs) {
     track.addTo(map);
     track.setLatLngs([latlngs]);
+    track.setStyle({color: '#4E47AB', dashArray: '5, 10', weight: 2});
     }
 
 function del_track() {
@@ -41,6 +40,11 @@ function center_on_marker() {
     var markerBounds = L.latLngBounds(latLngs);
     map.fitBounds(markerBounds);
     }
+
+function move(lat, lng) {
+    tracker.setLatLng([lat, lng]);
+    }
+
 ////////////////////////////////////////////////////////////
 // Layer group for start/finish markers
 var grp = L.layerGroup().addTo(map);
@@ -54,14 +58,13 @@ function clear_layer_grp() {
     grp.clearLayers()
     }
 
-function test() {
-    var text = String(grp.getLayerId(start_layer));
-    var id = grp.getLayerId(start_layer)
-    tracker.bindPopup(text).openPopup();
-    //grp.clearLayers()
-    //grp.removeLayer(id);
-    //map.removeLayer(track);
-    return id
+///////////////////////////////////////////////////////////
+// Segments
+function add_segment(latlngs, colour) {
+    segment_layer = L.polyline({color: '000000'});
+    grp.addLayer(segment_layer)
+    segment_layer.setLatLngs([latlngs]);
+    segment_layer.setStyle({color: colour});
     }
 
 /////////////////////////////////////////////////////////////
@@ -97,3 +100,15 @@ var startIcon = new L.Icon({
   popupAnchor: [1, -34],
   shadowSize: [41, 41]
 });
+
+////////////////////////////////////////////////////////////////
+//Test
+function test() {
+    var text = String(grp.getLayerId(start_layer));
+    var id = grp.getLayerId(start_layer)
+    tracker.bindPopup(text).openPopup();
+    //grp.clearLayers()
+    //grp.removeLayer(id);
+    //map.removeLayer(track);
+    return id
+    }
