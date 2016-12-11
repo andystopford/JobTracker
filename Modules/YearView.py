@@ -1,5 +1,6 @@
 from PyQt4 import QtCore, QtGui
 
+
 class YearView(QtGui.QTableView):
     def __init__(self, parent):
         super(YearView, self).__init__(parent)

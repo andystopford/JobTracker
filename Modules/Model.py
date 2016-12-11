@@ -1,7 +1,7 @@
 from PyQt4 import QtGui, QtCore
 from itertools import cycle, islice
 from Year import*
-from Epoch import*
+import CurrentDay
 
 
 class Model(QtGui.QStandardItemModel):
@@ -49,10 +49,10 @@ class Model(QtGui.QStandardItemModel):
                     date = QtGui.QStandardItem()
                     item.setChild(0, 1, date)
                     date.setData(date_to_log)
-                    epoch_item = QtGui.QStandardItem()  # holder for epoch inst.
-                    item.setChild(0, 2, epoch_item)
-                    epoch = Epoch(date_to_log)  # the current 24 hour day
-                    epoch_item.setData(epoch)
+                    currentDay_item = QtGui.QStandardItem()  # holder for currentDay inst.
+                    item.setChild(0, 2, currentDay_item)
+                    currentDay = CurrentDay.CurrentDay(date_to_log)  # the current 24 hour day
+                    currentDay_item.setData(currentDay)
         # return to JT setup_year()
         return date_list
 

@@ -1,30 +1,30 @@
 from PyQt4 import QtGui, QtCore
+from DateModel import*
 
-
-class Epoch:
+class CurrentDay:
     def __init__(self, date):
         """ A calendar date - name avoids confusion with built-in modules, etc"""
         self.date = date
         self.event_list = []
-        self.dateModel = DateModel()
-
+        #self.dateModel = DateModel(self)    # redundant
+    """
     def add_start_end(self, start, end, hours, miles):
         event = [start, end, hours, miles]
         self.event_list.append(event)
+        #timeSegment = TimeSegment(start, end, hours, miles)
+        #return timeSegment
 
     def append_times(self, parent, colour):
         col = QtGui.QColor()
         col.setNamedColor(colour)
-        #row_count = parent.ui.time_table.rowCount()
-        #parent.ui.time_table.insertRow(row_count)
+        row_count = parent.ui.time_table.rowCount()
+        parent.ui.time_table.insertRow(row_count)
         for list in self.event_list:
             for i, item in enumerate(list):
-                list[i] = QtGui.QStandardItem(item)
-                #list[i] = QtGui.QTableWidgetItem(item)
-                #list[i].setBackgroundColor(col)
-                #parent.ui.time_table.setItem(row_count, i, list[i])
-        self.dateModel.appendRow(list)
-        #self.event_list = []
+                list[i] = QtGui.QTableWidgetItem(item)
+                list[i].setBackgroundColor(col)
+                parent.ui.time_table.setItem(row_count, i, list[i])
+        self.event_list = []
 
     def get_model(self):
         return self.dateModel
@@ -40,14 +40,25 @@ class Epoch:
     def clear(self):
         self.dateModel.clear()
 
+    """
 
-class DateModel(QtGui.QStandardItemModel):
-    def __init__(self):
-        super(DateModel, self).__init__()
-        #self.parent = parent
-        self.setColumnCount(4)
-        labels = ['Start', 'End', 'Hours', 'Miles', 'Item', 'Cost £']
-        self.setHorizontalHeaderLabels(labels)
 
-    def supportedDropActions(self):
-        return QtCore.Qt.CopyAction | QtCore.Qt.MoveAction
+class TimeSegment:
+    def __init__(self, start, end, hrs, miles):
+        self.start = start
+        self.end = end
+        self.hrs = hrs
+        self.miles = miles
+
+    def get_start(self):
+        return self.start
+
+    def get_end(self):
+        return self.end
+
+    def get_hrs(self):
+        return self.hrs
+
+    def get_miles(self):
+        return self.miles
+

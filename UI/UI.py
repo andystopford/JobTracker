@@ -4,6 +4,8 @@ from PyQt4 import QtCore, QtGui, Qt
 from YearView import*
 from MapView import*
 from TimeLine import*
+from TrackTable import*
+from DayView import*
 
 try:
     _fromUtf8 = QtCore.QString.fromUtf8
@@ -31,16 +33,18 @@ class Ui_mainWindow(object):
         self.coord_display = QtGui.QLabel('test')
         self.date_display = QtGui.QLabel('Date')
         self.time_slider = QtGui.QSlider(Qt.Qt.Horizontal)
-        self.time_table = QtGui.QTableView()
-        #self.time_table = QtGui.QTableWidget()
+
+        #self.trackTable = QtGui.QTableWidget()
         self.from_display = QtGui.QTextEdit()
         self.time_display = QtGui.QTextEdit()
         self.to_display = QtGui.QTextEdit()
         # TODO - replace with treeWidget?
-        self.job_tickets = QtGui.QTreeView()
-        #self.job_time_table = QtGui.QTableWidget()
-        self.job_expenses_table = QtGui.QTableWidget()
+        #self.dayView = QtGui.QTreeView()
+        #self.job_trackTable = QtGui.QTableWidget()
         self.job_notes = QtGui.QTextEdit()
+        self.button_add_ticket = QtGui.QPushButton("Add Ticket")
+        self.button_add_expenses = QtGui.QPushButton("Add Expenses")
+        self.button_add_note = QtGui.QPushButton("Add Note")
         self.button_removals = QtGui.QRadioButton('Removals')
         self.button_other_work = QtGui.QRadioButton('Other Work')
         self.button_other = QtGui.QRadioButton('Non Work')
@@ -52,6 +56,8 @@ class Ui_mainWindow(object):
         self.yearView = YearView(parent_window)
         self.mapView = MapView(parent_window)
         self.timeLine = TimeLine(parent_window)
+        self.trackTable = TrackTable(parent_window)
+        self.dayView = DayView(parent_window)
         # Widget settings
         self.yearView.setMinimumHeight(320)
         self.filter_box.setInsertPolicy(6)
@@ -62,27 +68,14 @@ class Ui_mainWindow(object):
         self.from_display.setMaximumHeight(30)
         self.time_display.setMaximumHeight(30)
         self.to_display.setMaximumHeight(30)
-        tt_horiz_header = self.time_table.horizontalHeader()
+        tt_horiz_header = self.trackTable.horizontalHeader()
         tt_horiz_header.setResizeMode(QtGui.QHeaderView.Stretch)
-        jet_horiz_header = self.job_expenses_table.horizontalHeader()
-        jet_horiz_header.setResizeMode(QtGui.QHeaderView.Stretch)
-        #self.time_table.setColumnCount(4)
-        # jtt_horiz_header = self.job_time_table.horizontalHeader()
-        # jtt_horiz_header.setResizeMode(QtGui.QHeaderView.Stretch)
-        # et_horiz_header = self.job_expenses_table.horizontalHeader()
-        # et_horiz_header.setResizeMode(QtGui.QHeaderView.Stretch)
-        # self.job_time_table.setColumnCount(4)
-        self.job_expenses_table.setColumnCount(2)
-        #labels = ['Start', 'End', 'Hours', 'Miles']
-        #self.time_table.setHorizontalHeaderLabels(labels)
-        #self.job_tickets.setHorizontalHeaderLabels(labels)
-        labels = ['Item', '£']
-        self.job_expenses_table.setHorizontalHeaderLabels(labels)
+
 
         # Labels
-        label_job_tickets = QtGui.QLabel('Job Tickets')
-        label_job_tickets.setAlignment(QtCore.Qt.AlignCenter)
-        label_job_tickets.setMaximumHeight(10)
+        label_dayView = QtGui.QLabel('Job Tickets')
+        label_dayView.setAlignment(QtCore.Qt.AlignCenter)
+        label_dayView.setMaximumHeight(10)
         label_from = QtGui.QLabel('From')
         label_from.setAlignment(QtCore.Qt.AlignCenter)
         label_from.setMaximumHeight(10)
@@ -125,7 +118,7 @@ class Ui_mainWindow(object):
         map_ctrl_box.setMaximumWidth(275)
         map_ctrl_box_layout = QtGui.QVBoxLayout()
         map_ctrl_box.setLayout(map_ctrl_box_layout)
-        map_ctrl_box_layout.addWidget(self.time_table)
+        map_ctrl_box_layout.addWidget(self.trackTable)
         start_fin_layout = QtGui.QGridLayout()
         map_ctrl_box_layout.addLayout(start_fin_layout)
 
@@ -144,18 +137,27 @@ class Ui_mainWindow(object):
         #job_ctrl_box.setMaximumWidth(275)
         job_ctrl_layout = QtGui.QVBoxLayout()
         job_ctrl_box.setLayout(job_ctrl_layout)
+        job_ctrl_layout.addWidget(self.button_add_ticket)
+        job_ctrl_layout.addWidget(self.dayView)
+        """
+        ticket_ctrl_container = QtGui.QWidget()
+        job_ctrl_layout.addWidget(ticket_ctrl_container)
+        ticket_ctrl_layout = QtGui.QVBoxLayout()
+        ticket_ctrl_container.setLayout(ticket_ctrl_layout)
+        ticket_ctrl_layout.addWidget(self.button_add_ticket)
         radio_but_container = QtGui.QWidget()
         radio_but_layout = QtGui.QHBoxLayout()
         radio_but_container.setLayout(radio_but_layout)
         radio_but_layout.addWidget(self.button_removals)
         radio_but_layout.addWidget(self.button_other_work)
         radio_but_layout.addWidget(self.button_other)
-        job_ctrl_layout.addWidget(radio_but_container)
-        job_ctrl_layout.addWidget(label_job_tickets)
-        job_ctrl_layout.addWidget(self.job_tickets)
-        # job_ctrl_layout.addWidget(self.job_time_table)
-        job_ctrl_layout.addWidget(self.job_expenses_table)
-        job_ctrl_layout.addWidget(self.job_notes)
+        ticket_ctrl_layout.addWidget(radio_but_container)
+
+        ticket_ctrl_layout.addWidget(self.button_add_expenses)
+        ticket_ctrl_layout.addWidget(self.button_add_note)
+        # job_ctrl_layout.addWidget(self.job_trackTable)
+        ticket_ctrl_layout.addWidget(self.job_notes)
+        """
         ###################################################
         # Map group
         map_grp = QtGui.QGroupBox()

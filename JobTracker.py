@@ -15,7 +15,7 @@ from TrackPoint import*
 from TimeLine import*
 from DateDisplay import*
 from TimeConverter import*
-from TableModel import*
+from TrackModel import*
 from DateModel import*
 
 
@@ -31,14 +31,17 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.button_back.clicked.connect(self.year_back)
         self.ui.button_forward.clicked.connect(self.year_forward)
         self.ui.time_slider.valueChanged.connect(self.get_curr_time)
+        self.ui.button_add_ticket.clicked.connect(self.add_ticket)
         ##################################################
         # Initialise
         self.dateDisplay = DateDisplay(self.ui.yearView)
-        self.tableModel = TableModel(self)
-        self.proxy_model = QtGui.QSortFilterProxyModel()
+        self.trackModel = TrackModel(self)
+        self.table_proxy_model = QtGui.QSortFilterProxyModel()
         self.dateModel = DateModel(self)
-        #self.curr_epoch = 0
-        self.ui.time_table.setDragDropMode(QtGui.QAbstractItemView.InternalMove)
+        #self.date_proxy_model = QtGui.QSortFilterProxyModel()
+        #self.curr_day = 0
+        self.ui.trackTable.setDragDropMode(QtGui.QAbstractItemView.DragOnly)
+        #self.ui.dayView.setDragDropMode(QtGui.QAbstractItemView.DragDrop)
         #self.ui.job_expenses_table.setModel(self.dateModel)
         #self.ui.job_expenses_table.setColumnHidden(3, True)
         self.model_dict = {}
@@ -55,10 +58,12 @@ class MainWindow(QtGui.QMainWindow):
     def startup(self):
         dataIO = DataIO(self)
         dataIO.get_gpx()
-        self.proxy_model.setSourceModel(self.tableModel)
-        self.ui.time_table.setModel(self.proxy_model)
-        self.ui.job_tickets.setModel(self.proxy_model)
-        self.ui.time_table.setSortingEnabled(True)
+        #self.date_proxy_model.setSourceModel(self.dateModel)
+        self.table_proxy_model.setSourceModel(self.trackModel)
+        self.ui.trackTable.setModel(self.table_proxy_model)
+        self.ui.trackTable.set_selection_model(self.trackModel)
+        self.ui.dayView.setModel(self.dateModel)
+        self.ui.trackTable.setSortingEnabled(True)
         self.ui.yearView.setItemDelegate(self.dateDisplay)
         self.init_model()
         self.setup_year()
@@ -93,7 +98,7 @@ class MainWindow(QtGui.QMainWindow):
     def clear_year(self):
         self.ui.mapView.clear_map()
         self.ui.timeLine.zero_time_list()
-        self.tableModel.clear()
+        self.trackModel.clear()
         self.ui.from_display.clear()
         self.ui.time_display.clear()
         self.ui.to_display.clear()
@@ -122,10 +127,10 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.date_display.setText(date.toString())
         self.ui.timeLine.zero_time_list()
         self.time_block = 1
-        self.tableModel.clear()
+        self.dateModel.clear()
         self.get_track(date)
-        #self.ui.time_table.clearContents()
-        #self.ui.time_table.setRowCount(0)
+        #self.ui.trackTable.clearContents()
+        #self.ui.trackTable.setRowCount(0)
 
     def get_track(self, date):
         """Gets GPS data for selected day and displays it"""
@@ -159,8 +164,8 @@ class MainWindow(QtGui.QMainWindow):
             self.add_times(time_events)
 
     def add_times(self, time_events):
-        """Adds time events to the current day's epoch, and displays
-        them in self.ui.time_table"""
+        """Adds time events to the current day's curr_day, and displays
+        them in self.ui.trackTable"""
         segment = self.track_segment(time_events[4], time_events[5])
         leg_points = segment[0]
         miles = self.segment_dist(leg_points)
@@ -175,26 +180,30 @@ class MainWindow(QtGui.QMainWindow):
         end = time_events[1]
         hours = time_events[2]
 
-        # Fill epoch instance
-        epoch_item = date.child(0, 2)
-        epoch = epoch_item.data()
-        epoch.add_start_end(start, end, hours, miles)
-        epoch.append_times(self, segment[1])
-        date_model = epoch.get_model()
-        #self.ui.job_tickets.setModel(date_model)
+        # Fill curr_day instance
+        #curr_day_item = date.child(0, 2)
+        #curr_day = curr_day_item.data()
+        #curr_day.add_start_end(start, end, hours, miles)
+        #curr_day.append_times(self, segment[1])
+        #date_model = curr_day.get_model()
+        #self.ui.dayView.setModel(date_model)
 
-        epoch.colour_cells(segment[1])
-        #self.curr_epoch = epoch
+        #curr_day.colour_cells(segment[1])
+        #self.curr_day = curr_day
 
-        # Fill in time_table
+        # Fill in trackTable
         time_list = [start, end, hours, miles]
         for i, item in enumerate(time_list):
             time_list[i] = QtGui.QStandardItem(item)
-        self.tableModel.appendRow(time_list)
-        self.tableModel.setHorizontalHeaderLabels(['Start', 'End', 'Hours', 'Miles'])
+
+        self.trackModel.appendRow(time_list)
+        self.trackModel.setHorizontalHeaderLabels(['Start', 'End', 'Hours', 'Miles'])
         self.time_block += 1
         #self.track_segment(time_events[4], time_events[5])
         self.colour_cells(segment[1])
+
+    def add_ticket(self):
+        self.dateModel.add_ticket()
 
     def track_segment(self, start, end):
         leg_points = []
@@ -206,11 +215,12 @@ class MainWindow(QtGui.QMainWindow):
         return leg_points, colour
 
     def colour_cells(self, colour):
-        row = self.tableModel.rowCount() - 1
+        row = self.trackModel.rowCount() -1
+        print(row)
         col = QtGui.QColor()
         col.setNamedColor(colour)
         for i in range(4):
-            cell = self.tableModel.item(row, i)
+            cell = self.trackModel.item(row, i)
             cell.setBackground(col)
         #self.segment_dist(leg_points)
 
