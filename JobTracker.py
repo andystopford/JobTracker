@@ -16,7 +16,6 @@ from TimeLine import*
 from DateDisplay import*
 from TimeConverter import*
 from TrackModel import*
-from DateModel import*
 
 
 class MainWindow(QtGui.QMainWindow):
@@ -32,18 +31,15 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.button_forward.clicked.connect(self.year_forward)
         self.ui.time_slider.valueChanged.connect(self.get_curr_time)
         self.ui.button_add_ticket.clicked.connect(self.add_ticket)
+        self.ui.job_tickets.itemActivated.connect(self.select_ticket)
+        self.ui.job_tickets.itemDoubleClicked.connect(self.rename_ticket)
         ##################################################
         # Initialise
         self.dateDisplay = DateDisplay(self.ui.yearView)
         self.trackModel = TrackModel(self)
+        self.timeLine = TimeLine(self)
         self.table_proxy_model = QtGui.QSortFilterProxyModel()
-        self.dateModel = DateModel(self)
-        #self.date_proxy_model = QtGui.QSortFilterProxyModel()
-        #self.curr_day = 0
         self.ui.trackTable.setDragDropMode(QtGui.QAbstractItemView.DragOnly)
-        #self.ui.dayView.setDragDropMode(QtGui.QAbstractItemView.DragDrop)
-        #self.ui.job_expenses_table.setModel(self.dateModel)
-        #self.ui.job_expenses_table.setColumnHidden(3, True)
         self.model_dict = {}
         self.key_list = []  # temp store for model_dict keys
         self.point_list = []
@@ -58,11 +54,9 @@ class MainWindow(QtGui.QMainWindow):
     def startup(self):
         dataIO = DataIO(self)
         dataIO.get_gpx()
-        #self.date_proxy_model.setSourceModel(self.dateModel)
         self.table_proxy_model.setSourceModel(self.trackModel)
         self.ui.trackTable.setModel(self.table_proxy_model)
         self.ui.trackTable.set_selection_model(self.trackModel)
-        self.ui.dayView.setModel(self.dateModel)
         self.ui.trackTable.setSortingEnabled(True)
         self.ui.yearView.setItemDelegate(self.dateDisplay)
         self.init_model()
@@ -84,6 +78,7 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.label_year.setText(str(self.year))
         dataIO = DataIO(self)
         log_list = dataIO.get_logs(self.year)
+        # following prevents tickets surviving year change
         date_list = self.model.set_year(self.year)
         self.dateDisplay.setup(date_list, log_list)
 
@@ -96,41 +91,48 @@ class MainWindow(QtGui.QMainWindow):
         self.clear_year()
 
     def clear_year(self):
+        self.clear_date()
+        self.init_model()
+        self.setup_year()
+
+    def clear_date(self):
         self.ui.mapView.clear_map()
-        self.ui.timeLine.zero_time_list()
+        self.timeLine.zero_time_list()
         self.trackModel.clear()
         self.ui.from_display.clear()
         self.ui.time_display.clear()
         self.ui.to_display.clear()
+        self.ui.job_tickets.clear()
+        self.ui.hoursTable.clear()
+        self.ui.hoursTable.reset()
+        self.trackModel.reset()
         self.point_list = []
-        self.init_model()
-        self.setup_year()
+        return
 
     def get_curr_time(self, time):
         """Displays time slider current value and gets tracker
         coordinates"""
         gpsAnalyser = GpsAnalyser(self)
-        display = self.ui.timeLine.get_curr_time(time, self.point_list)
+        display = self.timeLine.get_curr_time(time, self.point_list)
         self.ui.time_display.setText(display[0])
         self.ui.time_display.setAlignment(Qt.Qt.AlignCenter)
         bisect = gpsAnalyser.bisect(display[1], display[2])
         coords = gpsAnalyser.get_coords(bisect[0], bisect[1], bisect[2])
         posn = gpsAnalyser.find_posn(coords)
         self.ui.mapView.draw_tracker(posn)
-        self.ui.timeLine.time_posn = (posn[0], posn[1])
+        self.timeLine.time_posn = (posn[0], posn[1])
 
     def select_date(self, indices):
+        self.clear_date()
         self.selected_indices = indices
         index = indices[0]
         day = self.model.itemFromIndex(index)
-        date = day.child(0, 1).data()   # QDate, e.g. (2016, 7, 15)
+        date = day.child(0, 0).data()   # QDate, e.g. (2016, 7, 15)
         self.ui.date_display.setText(date.toString())
-        self.ui.timeLine.zero_time_list()
+        self.timeLine.zero_time_list()
         self.time_block = 1
-        self.dateModel.clear()
         self.get_track(date)
-        #self.ui.trackTable.clearContents()
-        #self.ui.trackTable.setRowCount(0)
+        self.display_tickets()
 
     def get_track(self, date):
         """Gets GPS data for selected day and displays it"""
@@ -139,7 +141,7 @@ class MainWindow(QtGui.QMainWindow):
         gpsAnalyser = GpsAnalyser(self)
         self.point_list = gpsAnalyser.get_data(date)
         self.ui.mapView.draw_track(self.point_list)
-        set_times = self.ui.timeLine.set_time_slider(self.point_list)
+        set_times = self.timeLine.set_time_slider(self.point_list)
         self.ui.time_slider.setRange(0, set_times[2])
         tc = TimeConverter()
         from_time = tc.get_time_hrs_mins(set_times[0])
@@ -152,10 +154,13 @@ class MainWindow(QtGui.QMainWindow):
     def keyPressEvent(self, e):
         if self.ui.mapView.hasFocus() or self.ui.time_slider.hasFocus():
             if e.key() == QtCore.Qt.Key_Enter:
-                time_events = self.ui.timeLine.mark_time()
+                time_events = self.timeLine.mark_time()
                 self.display_times(time_events)
             if e.key() == QtCore.Qt.Key_Z:
                 self.ui.mapView.zoom_tracker()
+        if self.ui.hoursTable.hasFocus():
+            if e.key() == QtCore.Qt.Key_Return:
+                self.ui.hoursTable.update_tracks()
 
     def display_times(self, time_events):
         self.ui.mapView.marker_calc(time_events[0], time_events[3])
@@ -164,47 +169,69 @@ class MainWindow(QtGui.QMainWindow):
             self.add_times(time_events)
 
     def add_times(self, time_events):
-        """Adds time events to the current day's curr_day, and displays
-        them in self.ui.trackTable"""
+        """Displays selected track segment in self.ui.trackTable"""
         segment = self.track_segment(time_events[4], time_events[5])
         leg_points = segment[0]
         miles = self.segment_dist(leg_points)
         miles = round(miles, 2)
         miles = str(miles)
+        start = time_events[0]
+        end = time_events[1]
+        hours = time_events[2]
+        time_list = [start, end, hours, miles]
+        for i, item in enumerate(time_list):
+            time_list[i] = QtGui.QStandardItem(item)
+        self.trackModel.appendRow(time_list)
+        self.trackModel.setHorizontalHeaderLabels(['Start', 'End', 'Hours', 'Miles'])
+        self.time_block += 1
+        self.colour_cells(segment[1])
+
+    def get_day(self):
+        """Gets the currently selected day from the model"""
         model = self.model_dict[self.year]
         indices = self.selected_indices
         row = indices[0].row()
         col = indices[0].column()
-        date = model.item(row, col)
-        start = time_events[0]
-        end = time_events[1]
-        hours = time_events[2]
-
-        # Fill curr_day instance
-        #curr_day_item = date.child(0, 2)
-        #curr_day = curr_day_item.data()
-        #curr_day.add_start_end(start, end, hours, miles)
-        #curr_day.append_times(self, segment[1])
-        #date_model = curr_day.get_model()
-        #self.ui.dayView.setModel(date_model)
-
-        #curr_day.colour_cells(segment[1])
-        #self.curr_day = curr_day
-
-        # Fill in trackTable
-        time_list = [start, end, hours, miles]
-        for i, item in enumerate(time_list):
-            time_list[i] = QtGui.QStandardItem(item)
-
-        self.trackModel.appendRow(time_list)
-        self.trackModel.setHorizontalHeaderLabels(['Start', 'End', 'Hours', 'Miles'])
-        self.time_block += 1
-        #self.track_segment(time_events[4], time_events[5])
-        self.colour_cells(segment[1])
+        return model, row, col
 
     def add_ticket(self):
-        self.dateModel.add_ticket()
+        day = self.get_day()
+        day[0].add_ticket(day[1], day[2])
+        self.display_tickets()
 
+    def display_tickets(self):
+        day = self.get_day()
+        ticket_list = day[0].get_ticket_list(day[1], day[2])
+        self.ui.job_tickets.clear()
+        for ticket in ticket_list:
+            pos = self.ui.job_tickets.count() + 1
+            ticket_name = QtGui.QListWidgetItem()
+            ticket_name.setText(ticket.get_name())
+            self.ui.job_tickets.insertItem(pos, ticket_name)
+
+    def select_ticket(self, item):
+        self.ui.hoursTable.clear()
+        self.ui.hoursTable.reset()
+        self.ui.hoursTable.fill_table()
+
+    def rename_ticket(self, item):
+        """If lamda is not used, self.ticket_changed(item_name) will be immediately
+        evaluated and then the result passed by the connect method. With lambda,
+        the interpreter knows to pass item_name to be evaluated subsequently"""
+        item.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled)
+        item_name = item.text()
+        self.ui.job_tickets.itemChanged.connect(lambda: self.tkt_name_changed(item_name))
+
+    def tkt_name_changed(self, old_name):
+        curr_item = self.ui.job_tickets.currentItem()
+        day = self.get_day()
+        ticket_list = day[0].get_ticket_list(day[1], day[2])
+        for tkt in ticket_list:
+            if tkt.get_name() == old_name:
+                tkt.set_name(curr_item.text())
+
+
+    # GPS Tracks ##############################################
     def track_segment(self, start, end):
         leg_points = []
         for point in self.point_list:
@@ -216,14 +243,12 @@ class MainWindow(QtGui.QMainWindow):
 
     def colour_cells(self, colour):
         row = self.trackModel.rowCount() -1
-        print(row)
         col = QtGui.QColor()
         col.setNamedColor(colour)
+        col.setAlpha(127)
         for i in range(4):
             cell = self.trackModel.item(row, i)
             cell.setBackground(col)
-        #self.segment_dist(leg_points)
-
 
     def segment_dist(self, leg_points):
         gpsAnalyser = GpsAnalyser(self)
@@ -246,5 +271,6 @@ class MainWindow(QtGui.QMainWindow):
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
     myapp = MainWindow()
+    #app.setStyleSheet(qdarkstyle.load_stylesheet(pyside=False))
     myapp.show()
     sys.exit(app.exec_())

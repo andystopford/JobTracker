@@ -1,7 +1,8 @@
-from PyQt4 import QtGui, QtCore
 from itertools import cycle, islice
+
+from PyQt4 import QtGui, QtCore
+from Ticket import Ticket
 from Year import*
-import CurrentDay
 
 
 class Model(QtGui.QStandardItemModel):
@@ -47,12 +48,13 @@ class Model(QtGui.QStandardItemModel):
                     date = int(date)
                     date_to_log = QtCore.QDate(year, curr_month + 1, date)
                     date = QtGui.QStandardItem()
-                    item.setChild(0, 1, date)
+                    item.setChild(0, 0, date)
                     date.setData(date_to_log)
-                    currentDay_item = QtGui.QStandardItem()  # holder for currentDay inst.
-                    item.setChild(0, 2, currentDay_item)
-                    currentDay = CurrentDay.CurrentDay(date_to_log)  # the current 24 hour day
-                    currentDay_item.setData(currentDay)
+                    # other data
+                    tickets = QtGui.QStandardItem()
+                    ticket_list = []
+                    tickets.setData(ticket_list)
+                    item.setChild(0, 2, tickets)
         # return to JT setup_year()
         return date_list
 
@@ -70,6 +72,52 @@ class Model(QtGui.QStandardItemModel):
         else:
             # Other i.e. not working
             item.setBackground(QtGui.QColor(109, 255, 174))
+
+    def test(self, row, col, tag):
+        """proves access to model item from row/col"""
+        item = self.item(row, col)
+        test_list = ['a', 'b']
+        child = QtGui.QStandardItem()
+        child.setData(test_list)
+        item.setChild(0, 0, child)
+        result = item.child(0, 0)
+        if tag == 'work':
+            item.setBackground(QtGui.QColor(255, 0, 0))
+            print(result.data())
+        else:
+            # Other i.e. not working
+            item.setBackground(QtGui.QColor(109, 255, 174))
+
+    def add_ticket(self, row, col):
+        """Adds a job ticket to the currently selected day"""
+        ticket = Ticket()
+        day_item = self.item(row, col)
+        tickets = day_item.child(0, 2)
+        ticket_list = tickets.data()
+        name = 'Ticket ' + str(len(ticket_list) + 1)
+        ticket.set_name(name)
+        ticket_list.append(ticket)
+        tickets.setData(ticket_list)
+        #print(day_item.child(0, 0).data())
+        #print(day_item.child(0, 1).data())
+        #print(day_item.child(0, 2).data()) #list of Ticket objects
+        #for tkt in day_item.child(0, 2).data():
+        #    print(tkt.get_name())
+
+    def get_ticket_list(self, row, col):
+        day_item = self.item(row, col)
+        tickets = day_item.child(0, 2)
+        ticket_list = tickets.data()
+        return ticket_list
+
+    def get_ticket(self, row, col, name):
+        day_item = self.item(row, col)
+        tickets = day_item.child(0, 2)
+        ticket_list = tickets.data()
+        for tkt in ticket_list:
+            if tkt.get_name() == name:
+                return tkt
+
 
 
 

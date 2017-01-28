@@ -30,14 +30,13 @@ class TrackTable(QtGui.QTableView):
     def get_selection(self):
         """Get the text for each item in the selected row"""
         indices = self.selectedIndexes()
-        #index = indices[0]  # i.e. column 0
+        index = indices[0]  # i.e. column 0
         #print(index.row(), index.column())
         for i, item in enumerate(indices):
             index = indices[i]
             x = self.parent.trackModel.itemFromIndex(index)
             #print(x.text())
             self.track_list.append(x)
-            # TODO Add track info to self.parent.dateModel
 
     def right_click(self):
         menu = QtGui.QMenu(self)

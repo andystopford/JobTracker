@@ -6,7 +6,7 @@ class TimeConverter:
         hour = int(time[0:2])
         mins = int(time[3:5])
         hour *= 60
-        mins = hour + mins
+        mins += hour
         return mins
 
     def get_time_hrs_mins(self, time):
@@ -33,4 +33,21 @@ class TimeConverter:
 
     def calc_duration(self, start, end):
         return end - start
+
+    def fix_lazy(self, time):
+        """Re-formats times to 00:00 style e.g. 1.5 = 01:05"""
+        punc = time.find('.')
+        if punc != -1:
+            time = time.split('.')
+            hrs = time[0].zfill(2)
+            mins = time[1].zfill(2)
+            time = hrs + ':' + mins
+            print(time)
+            return time
+        else:
+            if len(time) == 1:
+                time = time.zfill(2)
+            if len(time) == 2:
+                time = time + ":00"
+            return  time
 
