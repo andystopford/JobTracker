@@ -59,6 +59,8 @@ class HoursTable(QtGui.QTableWidget):
 
     def fill_table(self):
         """Gets tracks for current ticket and fills table"""
+        self.clear()
+        self.reset()
         ticket = self.get_ticket()
         if ticket:
             track_list = ticket.get_tracks()
@@ -86,7 +88,7 @@ class HoursTable(QtGui.QTableWidget):
         return
 
     def add_track(self):
-        colour = QtGui.QColor(110, 138, 224)
+        colour = QtGui.QColor(195, 218, 255)
         brush = QtGui.QBrush(colour)
         ticket = self.get_ticket()
         track = Track('', '', '00:00', '0', '', brush, False)

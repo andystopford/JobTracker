@@ -56,3 +56,4 @@ class DateDisplay(QtGui.QStyledItemDelegate):
         colour = QtGui.QColor(255, 150, 150)
         return tri, colour
 
+

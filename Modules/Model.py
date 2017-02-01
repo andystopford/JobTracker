@@ -1,3 +1,4 @@
+import time
 from itertools import cycle, islice
 
 from PyQt4 import QtGui, QtCore
@@ -30,7 +31,7 @@ class Model(QtGui.QStandardItemModel):
                     self.setItem(row, col, log_date)
                     self.item(row, col).setBackground(QtGui.QColor(195, 218, 255))
 
-    def set_year(self, year):
+    def set_year(self, year, new):
         date_list = []
         # fill in the appropriate dates, e.g. 1st, 2nd, etc
         year_instance = Year(self, year)
@@ -51,12 +52,35 @@ class Model(QtGui.QStandardItemModel):
                     item.setChild(0, 0, date)
                     date.setData(date_to_log)
                     # other data
-                    tickets = QtGui.QStandardItem()
-                    ticket_list = []
-                    tickets.setData(ticket_list)
-                    item.setChild(0, 2, tickets)
+                    if new:
+                        tickets = QtGui.QStandardItem()
+                        ticket_list = []
+                        tickets.setData(ticket_list)
+                        item.setChild(0, 1, tickets)
+                    else:
+                        ticket_list = item.child(0, 1).data()
+                        if len(ticket_list) > 0:
+                            if ticket_list[0].get_type() == 'Removal':
+                                colour = QtGui.QColor(94, 89, 255)
+                            elif ticket_list[0].get_type() == 'Work':
+                                colour = QtGui.QColor(255, 139, 37)
+                            else:
+                                colour = QtGui.QColor(127, 104, 255)
+                            item.setBackground(colour)
+
+        self.mark_today(year_instance)
         # return to JT setup_year()
         return date_list
+
+    def mark_today(self, year_instance):
+        date = time.strftime("%d/%m/%Y")
+        if int(date[6:10]) == year_instance.year:
+            day = int(date[0:2])
+            month = int(date[3:5])
+            col = year_instance.get_column(month, day)
+            row = month - 1
+            item = self.item(row, col)
+            item.setBackground(QtGui.QColor(109, 255, 174))
 
     def tag_day(self, date, tag):
         """Colour codes days in YearView for work/other"""
@@ -88,14 +112,15 @@ class Model(QtGui.QStandardItemModel):
             # Other i.e. not working
             item.setBackground(QtGui.QColor(109, 255, 174))
 
-    def add_ticket(self, row, col):
+    def add_ticket(self, row, col, type):
         """Adds a job ticket to the currently selected day"""
         ticket = Ticket()
         day_item = self.item(row, col)
-        tickets = day_item.child(0, 2)
+        tickets = day_item.child(0, 1)
         ticket_list = tickets.data()
-        name = 'Ticket ' + str(len(ticket_list) + 1)
+        name = type # + ' ' + str(len(ticket_list) + 1)
         ticket.set_name(name)
+        ticket.set_type(type)
         ticket_list.append(ticket)
         tickets.setData(ticket_list)
         #print(day_item.child(0, 0).data())
@@ -106,13 +131,13 @@ class Model(QtGui.QStandardItemModel):
 
     def get_ticket_list(self, row, col):
         day_item = self.item(row, col)
-        tickets = day_item.child(0, 2)
+        tickets = day_item.child(0, 1)
         ticket_list = tickets.data()
         return ticket_list
 
     def get_ticket(self, row, col, name):
         day_item = self.item(row, col)
-        tickets = day_item.child(0, 2)
+        tickets = day_item.child(0, 1)
         ticket_list = tickets.data()
         for tkt in ticket_list:
             if tkt.get_name() == name:

@@ -8,13 +8,25 @@ class Ticket:
         self.track_list = []
         self.hours_list = []
         self.expenses_list = []
-        self.notes = ''
+        self.notes = None
 
     def set_name(self, name):
         self.name = name
 
+    def set_type(self, type):
+        self.type = type
+
     def get_name(self):
         return self.name
+
+    def get_type(self):
+        return self.type
+
+    def set_notes(self, notes):
+        self.notes = notes
+
+    def get_notes(self):
+        return self.notes
 
     def add_track(self, track):
         self.track_list.append(track)
@@ -32,6 +44,11 @@ class Ticket:
     def sort(self):
         self.track_list.sort(key=methodcaller('get_start'))
         return
+
+    def get_expenses(self):
+        return self.expenses_list
+
+
 
 
 class Track:
@@ -62,6 +79,11 @@ class Track:
 
     def get_brush(self):
         return self.brush
+
+    def get_colour(self):
+        colour = self.brush.color()
+        colour = str(colour.getRgb())
+        return colour
 
     def get_gps(self):
         return self.gps
