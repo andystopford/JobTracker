@@ -60,9 +60,9 @@ class Model(QtGui.QStandardItemModel):
                     else:
                         ticket_list = item.child(0, 1).data()
                         if len(ticket_list) > 0:
-                            if ticket_list[0].get_type() == 'Removal':
+                            if ticket_list[0].get_cat() == 'Removal':
                                 colour = QtGui.QColor(94, 89, 255)
-                            elif ticket_list[0].get_type() == 'Work':
+                            elif ticket_list[0].get_cat() == 'Work':
                                 colour = QtGui.QColor(255, 139, 37)
                             else:
                                 colour = QtGui.QColor(127, 104, 255)
@@ -112,15 +112,15 @@ class Model(QtGui.QStandardItemModel):
             # Other i.e. not working
             item.setBackground(QtGui.QColor(109, 255, 174))
 
-    def add_ticket(self, row, col, type):
+    def add_ticket(self, row, col, cat):
         """Adds a job ticket to the currently selected day"""
         ticket = Ticket()
         day_item = self.item(row, col)
         tickets = day_item.child(0, 1)
         ticket_list = tickets.data()
-        name = type # + ' ' + str(len(ticket_list) + 1)
+        name = cat # + ' ' + str(len(ticket_list) + 1)
         ticket.set_name(name)
-        ticket.set_type(type)
+        ticket.set_cat(cat)
         ticket_list.append(ticket)
         tickets.setData(ticket_list)
         #print(day_item.child(0, 0).data())
@@ -128,6 +128,7 @@ class Model(QtGui.QStandardItemModel):
         #print(day_item.child(0, 2).data()) #list of Ticket objects
         #for tkt in day_item.child(0, 2).data():
         #    print(tkt.get_name())
+        return ticket
 
     def get_ticket_list(self, row, col):
         day_item = self.item(row, col)

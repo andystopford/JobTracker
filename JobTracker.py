@@ -37,8 +37,8 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.menu_tickets.addAction('Removal', self.add_rem_ticket)
         self.ui.menu_tickets.addAction('Work', self.add_wrk_ticket)
         self.ui.menu_tickets.addAction('Other', self.add_oth_ticket)
-        self.ui.job_tickets.itemActivated.connect(self.select_ticket)
-        self.ui.job_tickets.itemDoubleClicked.connect(self.rename_ticket)
+        self.ui.jobTickets.itemActivated.connect(self.select_ticket)
+        self.ui.jobTickets.itemDoubleClicked.connect(self.rename_ticket)
         #self.ui.button
         ##################################################
         # Initialise
@@ -48,6 +48,7 @@ class MainWindow(QtGui.QMainWindow):
         self.stateMachine = StateMachine(self)
         self.table_proxy_model = QtGui.QSortFilterProxyModel()
         self.ui.trackTable.setDragDropMode(QtGui.QAbstractItemView.DragOnly)
+        self.ui.ticketNotes.installEventFilter(self)
         self.model_dict = {}
         self.key_list = []  # temp store for model_dict keys
         self.point_list = []
@@ -59,6 +60,26 @@ class MainWindow(QtGui.QMainWindow):
         self.year = today.year
         self.showMaximized()
         self.startup()
+
+    def eventFilter(self, source, event):
+        if (event.type() == QtCore.QEvent.FocusOut and
+                source is self.ui.ticketNotes):
+            print('eventFilter: focus out')
+        return super(MainWindow, self).eventFilter(source, event)
+
+    def keyPressEvent(self, e):
+        if self.ui.mapView.hasFocus() or self.ui.time_slider.hasFocus():
+            if e.key() == QtCore.Qt.Key_Control:
+                time_events = self.timeLine.mark_time()
+                self.display_times(time_events)
+            if e.key() == QtCore.Qt.Key_Z:
+                self.ui.mapView.zoom_tracker()
+        if self.ui.hoursTable.hasFocus():
+            if e.key() == QtCore.Qt.Key_Return:
+                self.ui.hoursTable.update_tracks()
+        if self.ui.expensesTable.hasFocus():
+            if e.key() == QtCore.Qt.Key_Return:
+                self.ui.expensesTable.update()
 
     def startup(self):
         dataIO = DataIO(self)
@@ -91,10 +112,12 @@ class MainWindow(QtGui.QMainWindow):
         self.dateDisplay.setup(date_list, log_list)
 
     def year_back(self):
+        self.stateMachine.new_date()
         self.year -= 1
         self.clear_year()
 
     def year_forward(self):
+        self.stateMachine.new_date()
         self.year += 1
         self.clear_year()
 
@@ -110,8 +133,7 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.from_display.clear()
         self.ui.time_display.clear()
         self.ui.to_display.clear()
-        #self.ui.ticketNotes.clear()
-        self.ui.job_tickets.clear()
+        self.ui.jobTickets.clear()
         self.ui.hoursTable.clear()
         self.ui.hoursTable.reset()
         self.ui.expensesTable.clear()
@@ -134,21 +156,25 @@ class MainWindow(QtGui.QMainWindow):
         self.timeLine.time_posn = (posn[0], posn[1])
 
     def select_date(self, indices):
-        print('sel_date')
-        self.stateMachine.check_unsaved()
+        index = indices[0]
+        day = self.model.itemFromIndex(index)
+        date = day.child(0, 0).data()  # QDate, e.g. (2016, 7, 15)
+        self.ui.date_display.setText(date.toString())
+        # TODO stateMachine transition dependent on existing ticket
+        tickets = day.child(0, 1)
+        tkt_list = tickets.data()
+        #print('len tkt_list ', len(tkt_list))
+        #if len(tkt_list) == 0:
+        self.stateMachine.new_date()
         self.clear_date()
         self.setup_year(False)
         self.selected_indices = indices
-        index = indices[0]
-        day = self.model.itemFromIndex(index)
-        date = day.child(0, 0).data()   # QDate, e.g. (2016, 7, 15)
-        self.ui.date_display.setText(date.toString())
+
         self.timeLine.zero_time_list()
         self.get_track(date)
         self.display_tickets()
-
-        date = day.child(0, 0).data()
-        date = date.toString('dd.MM.yyyy')
+        # date = day.child(0, 0).data()
+        # date = date.toString('dd.MM.yyyy')
 
     def get_track(self, date):
         """Gets GPS data for selected day and displays it"""
@@ -166,20 +192,6 @@ class MainWindow(QtGui.QMainWindow):
         to_time = tc.get_time_hrs_mins(set_times[1])
         self.ui.to_display.setText(to_time)
         self.ui.to_display.setAlignment(Qt.Qt.AlignCenter)
-
-    def keyPressEvent(self, e):
-        if self.ui.mapView.hasFocus() or self.ui.time_slider.hasFocus():
-            if e.key() == QtCore.Qt.Key_Control:
-                time_events = self.timeLine.mark_time()
-                self.display_times(time_events)
-            if e.key() == QtCore.Qt.Key_Z:
-                self.ui.mapView.zoom_tracker()
-        if self.ui.hoursTable.hasFocus():
-            if e.key() == QtCore.Qt.Key_Return:
-                self.ui.hoursTable.update_tracks()
-        if self.ui.expensesTable.hasFocus():
-            if e.key() == QtCore.Qt.Key_Return:
-                self.ui.expensesTable.update()
 
     def display_times(self, time_events):
         self.ui.mapView.marker_calc(time_events[0], time_events[3])
@@ -232,33 +244,43 @@ class MainWindow(QtGui.QMainWindow):
     def display_tickets(self):
         day = self.get_day()
         ticket_list = day[0].get_ticket_list(day[1], day[2])
-        self.ui.job_tickets.clear()
+        self.ui.jobTickets.clear()
         for ticket in ticket_list:
-            pos = self.ui.job_tickets.count() + 1
+            pos = self.ui.jobTickets.count() + 1
             ticket_name = QtGui.QListWidgetItem()
             ticket_name.setText(ticket.get_name())
             colour = QtGui.QColor(255, 255, 255)
             ticket_name.setTextColor(colour)
-            if ticket.get_type() == 'Removal':
+            if ticket.get_cat() == 'Removal':
                 colour = QtGui.QColor(94, 89, 255)
                 ticket_name.setBackgroundColor(colour)
-            elif ticket.get_type() == 'Work':
+            elif ticket.get_cat() == 'Work':
                 colour = QtGui.QColor(255, 139, 37)
                 ticket_name.setBackgroundColor(colour)
             else:
                 colour = QtGui.QColor(127, 104, 255)
                 ticket_name.setBackgroundColor(colour)
-            self.ui.job_tickets.insertItem(pos, ticket_name)
+            self.ui.jobTickets.insertItem(pos, ticket_name)
         # Select last ticket added
-        if len(ticket_list) > 0:
-            self.ui.job_tickets.setCurrentItem(ticket_name)
-            self.ui.job_tickets.setItemSelected(ticket_name, True)
-            self.select_ticket(ticket_name)
+        if len(ticket_list) == 1:
+            self.ui.jobTickets.setCurrentItem(ticket_name)
+            self.ui.jobTickets.setItemSelected(ticket_name, True)
+            self.add_ticket()
+        if len(ticket_list) > 1:
+            self.ui.jobTickets.setCurrentItem(ticket_name)
+            self.ui.jobTickets.setItemSelected(ticket_name, True)
+            self.add_ticket()
 
-    def select_ticket(self, tkt):
-        text = self.ui.ticketNotes.save()
-        print('text', text)
-        self.stateMachine.set_curr_ticket(tkt)
+    def select_ticket(self):
+        """From clicking item in jobTickets"""
+        # print('')
+        # print('Ticket clicked')
+        self.stateMachine.use_ticket()
+        self.ui.hoursTable.fill_table()
+        self.ui.expensesTable.fill_table()
+
+    def add_ticket(self):
+        self.stateMachine.add_ticket()
         self.ui.hoursTable.fill_table()
         self.ui.expensesTable.fill_table()
 
@@ -268,10 +290,10 @@ class MainWindow(QtGui.QMainWindow):
         the interpreter knows to pass item_name to be evaluated subsequently"""
         item.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled)
         item_name = item.text()
-        self.ui.job_tickets.itemChanged.connect(lambda: self.tkt_name_changed(item_name))
+        self.ui.jobTickets.itemChanged.connect(lambda: self.tkt_name_changed(item_name))
 
     def tkt_name_changed(self, old_name):
-        curr_item = self.ui.job_tickets.currentItem()
+        curr_item = self.ui.jobTickets.currentItem()
         day = self.get_day()
         ticket_list = day[0].get_ticket_list(day[1], day[2])
         for tkt in ticket_list:
@@ -316,7 +338,8 @@ class MainWindow(QtGui.QMainWindow):
         dataIO.save(self.model_dict)
 
     def test(self):
-        return
+        dataIO = DataIO(self)
+        dataIO.open()
 
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)

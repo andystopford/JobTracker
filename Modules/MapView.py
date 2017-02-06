@@ -1,6 +1,8 @@
-from PyQt4 import QtCore, QtGui, QtWebKit
-import sys
 import json
+import sys
+
+from PyQt4 import QtCore, QtWebKit
+
 sys.path.append('./Scripts/')
 
 
@@ -87,12 +89,9 @@ class MapView(QtWebKit.QWebView):
             self.colour_index = 0
         return curr_colour
 
-
-
     def test(self):
         test = self.frame.evaluateJavaScript('test();')
         print(test)
-
 
     @QtCore.pyqtSlot(float, float)  # required to make Python method available to JS
     def onMapMove(self, lat, lng):

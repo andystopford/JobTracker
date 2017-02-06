@@ -38,20 +38,14 @@ class Ui_mainWindow(object):
         self.from_display = QtGui.QTextEdit()
         self.time_display = QtGui.QTextEdit()
         self.to_display = QtGui.QTextEdit()
-        self.job_tickets = QtGui.QListWidget()
+        self.jobTickets = QtGui.QListWidget()
         self.button_add_ticket = QtGui.QPushButton("Add Ticket")
         self.menu_tickets = QtGui.QMenu()
         self.button_add_ticket.setMenu(self.menu_tickets)
-        #self.button_add_work = QtGui.QPushButton("Work")
-        #self.button_add_other = QtGui.QPushButton("Other")
-        #self.button_removals = QtGui.QRadioButton('Removals')
-        #self.button_other_work = QtGui.QRadioButton('Other Work')
-        #self.button_other = QtGui.QRadioButton('Non Work')
 
     def setup_ui(self, parent_window):
         central_widget = QtGui.QWidget(parent_window)
         parent_window.setCentralWidget(central_widget)
-
         # Import widgets
         self.yearView = YearView(parent_window)
         self.mapView = MapView(parent_window)
@@ -59,7 +53,6 @@ class Ui_mainWindow(object):
         self.trackTable = TrackTable(parent_window)
         self.hoursTable = HoursTable(parent_window)
         self.expensesTable = ExpensesTable(parent_window)
-
         # Widget settings
         self.yearView.setMinimumHeight(320)
         self.filter_box.setInsertPolicy(6)
@@ -80,7 +73,6 @@ class Ui_mainWindow(object):
         et_horiz_header = self.expensesTable.horizontalHeader()
         et_horiz_header.setResizeMode(QtGui.QHeaderView.Stretch)
         self.expensesTable.setColumnCount(2)
-        #self.expensesTable.setRowCount(5)
         self.expensesTable.setHorizontalHeaderLabels(['Item', 'Cost'])
 
         # Labels
@@ -109,7 +101,8 @@ class Ui_mainWindow(object):
         top_button_widget = QtGui.QWidget()
         top_button_layout = QtGui.QHBoxLayout()
         top_button_widget.setLayout(top_button_layout)
-        top_button_layout.addWidget(self.filter_box)
+        #top_button_layout.addWidget(self.filter_box)
+        top_button_layout.addWidget(self.button_test)
         top_button_layout.addWidget(self.button_back)
         top_button_layout.addWidget(self.label_year)
         top_button_layout.addWidget(self.button_forward)
@@ -151,21 +144,12 @@ class Ui_mainWindow(object):
         ticket_list_container.setLayout(ticket_list_layout)
         ticket_list_container.setMaximumWidth(110)
         ticket_list_layout.addWidget(self.button_add_ticket)
-        #ticket_list_layout.addWidget(self.button_add_work)
-        #ticket_list_layout.addWidget(self.button_add_other)
-        ticket_list_layout.addWidget(self.job_tickets)
+        ticket_list_layout.addWidget(self.jobTickets)
 
         job_ctrl_splitter.addWidget(ticket_list_container)
         ticket_ctrl_splitter = QtGui.QSplitter(Qt.Qt.Vertical)
         job_ctrl_splitter.addWidget(ticket_ctrl_splitter)
 
-        #radio_but_container = QtGui.QWidget()
-        #radio_but_layout = QtGui.QHBoxLayout()
-        #radio_but_container.setLayout(radio_but_layout)
-        #radio_but_layout.addWidget(self.button_removals)
-        #radio_but_layout.addWidget(self.button_other_work)
-        #radio_but_layout.addWidget(self.button_other)
-        #ticket_ctrl_splitter.addWidget(radio_but_container)
         ticket_ctrl_splitter.addWidget(self.ticketNotes)
         ticket_ctrl_splitter.addWidget(self.hoursTable)
         ticket_ctrl_splitter.addWidget(self.expensesTable)

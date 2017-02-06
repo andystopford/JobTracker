@@ -6,15 +6,14 @@ class ExpensesTable(QtGui.QTableWidget):
         super(ExpensesTable, self).__init__(parent)
         self.parent = parent
         self.setRowCount(2)
-        #self.itemSelectionChanged.connect(self.update)
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.connect(self, QtCore.SIGNAL("customContextMenuRequested(QPoint)"), self.rclick_menu)
 
     def rclick_menu(self):
-        self.menu = QtGui.QMenu(self)
+        menu = QtGui.QMenu(self)
         delete = QtGui.QAction('Delete', self)
-        self.menu.addAction(delete)
-        self.menu.popup(QtGui.QCursor.pos())
+        menu.addAction(delete)
+        menu.popup(QtGui.QCursor.pos())
         delete.triggered.connect(self.delete_entry)
 
     def delete_entry(self):
@@ -31,9 +30,9 @@ class ExpensesTable(QtGui.QTableWidget):
 
     def get_ticket(self):
         day = self.parent.get_day()
-        tkt_name = self.parent.ui.job_tickets.currentItem()
+        tkt_name = self.parent.ui.jobTickets.currentItem()
         if not tkt_name:
-            print('no ticket selected')# n.b. cope with changed notes for all
+            print('no ticket selected')
             return
         tkt_name = tkt_name.text()
         ticket = day[0].get_ticket(day[1], day[2], tkt_name)
@@ -72,9 +71,6 @@ class ExpensesTable(QtGui.QTableWidget):
         for item in exp_list:
             if len(item) == 2:
                 total_cost += float(item[1])
-        #print(total_cost)
-        #print('row count', row_count)
-        #print(exp_list)
         colour = QtGui.QColor(255, 159, 161)
         brush = QtGui.QBrush(colour)
         label = QtGui.QTableWidgetItem()

@@ -4,7 +4,7 @@ class Ticket:
     def __init__(self):
         """Contains  notes, times, expenses for a ticketed job or event"""
         self.name = ''
-        self.type = ''
+        self.tkt_cat = ''
         self.track_list = []
         self.hours_list = []
         self.expenses_list = []
@@ -13,14 +13,14 @@ class Ticket:
     def set_name(self, name):
         self.name = name
 
-    def set_type(self, type):
-        self.type = type
+    def set_cat(self, tkt_cat):
+        self.tkt_cat = tkt_cat
 
     def get_name(self):
         return self.name
 
-    def get_type(self):
-        return self.type
+    def get_cat(self):
+        return self.tkt_cat
 
     def set_notes(self, notes):
         self.notes = notes
@@ -33,7 +33,6 @@ class Ticket:
         self.sort()
 
     def delete_track(self, track):
-        print('track', track)
         del self.track_list[track]
         self.sort()
         return
@@ -45,6 +44,9 @@ class Ticket:
         self.track_list.sort(key=methodcaller('get_start'))
         return
 
+    def add_expense(self, expense):
+        self.expenses_list.append(expense)
+
     def get_expenses(self):
         return self.expenses_list
 
@@ -52,7 +54,7 @@ class Ticket:
 
 
 class Track:
-    def __init__(self, start, end, hours, miles, notes, brush, gps):
+    def __init__(self, start, end, hours, miles, notes, brush):
         """Start, end, hours and miles - from GPS or manually added"""
         self.start = start
         self.end = end
@@ -60,7 +62,6 @@ class Track:
         self. miles = miles
         self.notes = notes
         self.brush = brush
-        self.gps = gps
 
     def get_start(self):
         return self.start
@@ -82,11 +83,8 @@ class Track:
 
     def get_colour(self):
         colour = self.brush.color()
-        colour = str(colour.getRgb())
+        colour = colour.name()
         return colour
-
-    def get_gps(self):
-        return self.gps
     
     def set_start(self, start):
         self.start = start
@@ -110,7 +108,3 @@ class Track:
         self.miles = miles
         self.notes = notes
 
-
-class Expense:
-    def __init__(self, item, cost):
-        """Expenses"""

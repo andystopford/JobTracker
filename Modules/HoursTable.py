@@ -11,12 +11,12 @@ class HoursTable(QtGui.QTableWidget):
         self.connect(self, QtCore.SIGNAL("customContextMenuRequested(QPoint)"), self.rclick_menu)
 
     def rclick_menu(self):
-        self.menu = QtGui.QMenu(self)
+        menu = QtGui.QMenu(self)
         add = QtGui.QAction('Add', self)
         delete = QtGui.QAction('Delete', self)
-        self.menu.addAction(add)
-        self.menu.addAction(delete)
-        self.menu.popup(QtGui.QCursor.pos())
+        menu.addAction(add)
+        menu.addAction(delete)
+        menu.popup(QtGui.QCursor.pos())
         add.triggered.connect(self.add_track)
         delete.triggered.connect(self.delete_track)
 
@@ -37,8 +37,7 @@ class HoursTable(QtGui.QTableWidget):
                 brush = trk_item.background()
                 trk_item = trk_item.text()
                 trk.append(trk_item)
-                #track = trk_data
-            track = Track(trk[0], trk[1], trk[2], trk[3], '', brush, True)
+            track = Track(trk[0], trk[1], trk[2], trk[3], '', brush)
             ticket.add_track(track)
         self.fill_table()
 
@@ -49,9 +48,9 @@ class HoursTable(QtGui.QTableWidget):
 
     def get_ticket(self):
         day = self.parent.get_day()
-        tkt_name = self.parent.ui.job_tickets.currentItem()
+        tkt_name = self.parent.ui.jobTickets.currentItem()
         if not tkt_name:
-            print('no ticket selected')# n.b. cope with changed notes for all
+            print('no ticket selected')
             return
         tkt_name = tkt_name.text()
         ticket = day[0].get_ticket(day[1], day[2], tkt_name)
@@ -91,7 +90,7 @@ class HoursTable(QtGui.QTableWidget):
         colour = QtGui.QColor(195, 218, 255)
         brush = QtGui.QBrush(colour)
         ticket = self.get_ticket()
-        track = Track('', '', '00:00', '0', '', brush, False)
+        track = Track('', '', '00:00', '0', '', brush)
         ticket.add_track(track)
         self.clear()
         self.fill_table()
@@ -110,18 +109,18 @@ class HoursTable(QtGui.QTableWidget):
         ticket = self.get_ticket()
         track_list = ticket.get_tracks()
         for t, track in enumerate(track_list):
-            if not track.get_gps():
+            #if not track.get_gps():
                 # Init manually entered track
-                new = []
-                for i in range(0, 5):
-                    new_val = (self.item(t, i)).text()
-                    if i == 2:
-                        new_val = tc.fix_lazy(new_val)
-                    new.append(new_val)
-                track.set_all(new[0], new[1], new[2], new[3], new[4])
-            else:
-                new_val = (self.item(t, 4)).text()
-                track.set_notes(new_val)
+            new = []
+            for i in range(0, 5):
+                new_val = (self.item(t, i)).text()
+                if i == 2:
+                    new_val = tc.fix_lazy(new_val)
+                new.append(new_val)
+            track.set_all(new[0], new[1], new[2], new[3], new[4])
+            #else:
+            #    new_val = (self.item(t, 4)).text()
+            #    track.set_notes(new_val)
         ticket.sort()
         self.clear()
         self.fill_table()
