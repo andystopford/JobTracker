@@ -8,6 +8,7 @@ sys.path.append('./Scripts/')
 
 class MapView(QtWebKit.QWebView):
     def __init__(self, parent):
+        """Displays OpenStreetMap"""
         self.parent = parent
         super(MapView, self).__init__(parent)
         self.page().mainFrame().addToJavaScriptWindowObject("MainWindow", self)
@@ -22,6 +23,7 @@ class MapView(QtWebKit.QWebView):
             self.frame.evaluateJavaScript(f.read())
 
     def clear_map(self):
+        """Removes previously drawn tracks and markers"""
         home = [51.1595954895, 0.260109901428]
         self.frame.evaluateJavaScript('del_track();')
         self.frame.evaluateJavaScript('clear_layer_grp();')

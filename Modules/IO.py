@@ -8,12 +8,15 @@ from PyQt4 import QtGui
 sys.path.append("./Modules")
 from Year import *
 from Ticket import Track
+from Model import*
 
 
 class DataIO:
     def __init__(self, parent):
+        """Module to read/write disc files"""
         self.path = './Logs'
         self.parent = parent
+        self.user_path = "/home/andy/Dropbox/JobTrackerUser/"
 
     def get_gpx(self):
         """Copies .gpx files from Dropbox to ./Logs directory"""
@@ -38,47 +41,56 @@ class DataIO:
         return log_list
 
     def open(self):
-        with open('file.xml', "r") as fo:
-            tree = ET.parse(fo)
-            root = tree.getroot()
-            for date in root:
-                year = date.get('date')
-                year = int(year[6:10])
-                row = int(date.get('row'))
-                col = int(date.get('col'))
-                model = self.parent.model_dict[year]
-                for tkt in date:
-                    name = tkt.text
-                    cat = tkt[0].text
-                    notes = tkt[1].text
-                    tracks = tkt[2]
-                    ticket = model.add_ticket(row, col, cat)
-                    ticket.set_name(name)
-                    ticket.set_notes(notes)
-                    for trk in tracks:
-                        start = trk.get('start')
-                        end = trk.get('end')
-                        hours = trk.get('hours')
-                        miles = trk.get('miles')
-                        trk_notes = trk.get('notes')
-                        colour = trk.get('colour')
-                        colour = QtGui.QColor(colour)
-                        colour.setAlpha(127)
-                        brush = QtGui.QBrush(colour)
-                        track = Track(start, end, hours, miles, trk_notes, brush)
-                        ticket.add_track(track)
-                    expenses = tkt[3]
-                    for exp in expenses:
-                        item = exp.get('item')
-                        cost = exp.get('cost')
-                        expense = [item, cost]
-                        ticket.add_expense(expense)
+        """Open user data"""
+        try:
+            path = self.user_path
+            with open(path + 'years.xml', "r") as fo:
+                tree = ET.parse(fo)
+                root = tree.getroot()
+                for date in root:
+                    year = date.get('date')
+                    year = int(year[6:10])
+                    row = int(date.get('row'))
+                    col = int(date.get('col'))
+                    if year not in self.parent.model_dict:
+                        model = Model(self.parent)
+                        model.set_year(year, True)
+                        self.parent.model_dict[year] = model
+                    model = self.parent.model_dict[year]
+                    for tkt in date:
+                        name = tkt.text
+                        cat = tkt[0].text
+                        notes = tkt[1].text
+                        tracks = tkt[2]
+                        ticket = model.add_ticket(row, col, cat)
+                        ticket.set_name(name)
+                        ticket.set_notes(notes)
+                        for trk in tracks:
+                            start = trk.get('start')
+                            end = trk.get('end')
+                            hours = trk.get('hours')
+                            miles = trk.get('miles')
+                            trk_notes = trk.get('notes')
+                            colour = trk.get('colour')
+                            colour = QtGui.QColor(colour)
+                            colour.setAlpha(127)
+                            brush = QtGui.QBrush(colour)
+                            track = Track(start, end, hours, miles, trk_notes, brush)
+                            ticket.add_track(track)
+                        expenses = tkt[3]
+                        for exp in expenses:
+                            item = exp.get('item')
+                            cost = exp.get('cost')
+                            expense = [item, cost]
+                            ticket.add_expense(expense)
+        except:
+            print('User not found')
         self.parent.clear_year()
 
     def save(self, model_dict):
-        # Check all entered data is in model:
-        self.parent.stateMachine.new_date()
-        self.parent.ui.hoursTable.update_tracks()
+        """Save user data"""
+        # Might need something for following line
+        #self.parent.ui.hoursTable.update_tracks()
         # Construct elementtree
         root = ET.Element('Root')
         tree = ET.ElementTree(root)
@@ -125,6 +137,13 @@ class DataIO:
                                     exp = ET.SubElement(tkt_expenses, ('Expense' + str(i)))
                                     exp.set('item', expense[0])
                                     exp.set('cost', expense[1])
-
-        with open('file.xml', "wb") as fo:  # Must be 'wb', not 'w' in Python 3
+        path = self.user_path
+        try:
+            os.remove("{0}BAK_years.xml".format(path))
+        except OSError as e:
+            print(e.errno)
+        os.rename("{0}years.xml".format(path), "{0}BAK_years.xml".format(path))
+        with open("{0}years.xml".format(path), "wb") as fo:
             tree.write(fo)
+
+

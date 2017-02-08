@@ -24,6 +24,7 @@ class ExpensesTable(QtGui.QTableWidget):
         self.removeRow(row)
         self.setRowCount(len(ticket.expenses_list) + 1)
         self.total(ticket.expenses_list)
+        self.parent.dirty = True
 
     def reset(self):
         self.setHorizontalHeaderLabels(['Item', 'Cost'])
@@ -64,6 +65,7 @@ class ExpensesTable(QtGui.QTableWidget):
                         exp_item.append(self.item(row, 1).text())
                     ticket.expenses_list.append(exp_item)
         self.total(ticket.expenses_list)
+        self.parent.dirty = True    # might not always be necessary
 
     def total(self, exp_list):
         row_count = self.rowCount()

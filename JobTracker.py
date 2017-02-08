@@ -1,9 +1,7 @@
-#!/usr/bin/python3.4
 import sys
 sys.path.append("./Modules")
 sys.path.append("./UI")
 sys.path.append("./Icons")
-# sys.path.append("./Scripts")
 from PyQt4 import QtCore, QtGui, Qt
 import datetime
 from UI import Ui_mainWindow
@@ -17,7 +15,7 @@ from TimeLine import*
 from DateDisplay import*
 from TimeConverter import*
 from TrackModel import*
-from StateMachine import*
+import qdarkstyle
 
 
 class MainWindow(QtGui.QMainWindow):
@@ -25,8 +23,9 @@ class MainWindow(QtGui.QMainWindow):
         QtGui.QWidget.__init__(self, parent)
         self.ui = Ui_mainWindow()
         self.ui.setup_ui(self)
-        self.setWindowTitle("JobTracker")
+        self.setWindowTitle("JobTracker 2.0")
         self.setWindowIcon(QtGui.QIcon('./Icons/shackles.png'))
+        # self.setStyleSheet(qdarkstyle.load_stylesheet(pyside=False))
 
         # Signals
         self.ui.button_test.clicked.connect(self.test)
@@ -37,15 +36,12 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.menu_tickets.addAction('Removal', self.add_rem_ticket)
         self.ui.menu_tickets.addAction('Work', self.add_wrk_ticket)
         self.ui.menu_tickets.addAction('Other', self.add_oth_ticket)
-        self.ui.jobTickets.itemActivated.connect(self.select_ticket)
-        self.ui.jobTickets.itemDoubleClicked.connect(self.rename_ticket)
-        #self.ui.button
+
         ##################################################
         # Initialise
         self.dateDisplay = DateDisplay(self.ui.yearView)
         self.trackModel = TrackModel(self)
         self.timeLine = TimeLine(self)
-        self.stateMachine = StateMachine(self)
         self.table_proxy_model = QtGui.QSortFilterProxyModel()
         self.ui.trackTable.setDragDropMode(QtGui.QAbstractItemView.DragOnly)
         self.ui.ticketNotes.installEventFilter(self)
@@ -65,6 +61,7 @@ class MainWindow(QtGui.QMainWindow):
         if (event.type() == QtCore.QEvent.FocusOut and
                 source is self.ui.ticketNotes):
             print('eventFilter: focus out')
+            self.ui.ticketNotes.save()
         return super(MainWindow, self).eventFilter(source, event)
 
     def keyPressEvent(self, e):
@@ -91,6 +88,7 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.yearView.setItemDelegate(self.dateDisplay)
         self.init_model()
         self.setup_year(True)
+        dataIO.open()
 
     def init_model(self):
         """Model initialised - called at startup so calendar dates
@@ -112,12 +110,10 @@ class MainWindow(QtGui.QMainWindow):
         self.dateDisplay.setup(date_list, log_list)
 
     def year_back(self):
-        self.stateMachine.new_date()
         self.year -= 1
         self.clear_year()
 
     def year_forward(self):
-        self.stateMachine.new_date()
         self.year += 1
         self.clear_year()
 
@@ -134,6 +130,7 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.time_display.clear()
         self.ui.to_display.clear()
         self.ui.jobTickets.clear()
+        self.ui.ticketNotes.clear()
         self.ui.hoursTable.clear()
         self.ui.hoursTable.reset()
         self.ui.expensesTable.clear()
@@ -158,23 +155,16 @@ class MainWindow(QtGui.QMainWindow):
     def select_date(self, indices):
         index = indices[0]
         day = self.model.itemFromIndex(index)
+        #if day.child(0, 0) is not None:
         date = day.child(0, 0).data()  # QDate, e.g. (2016, 7, 15)
         self.ui.date_display.setText(date.toString())
-        # TODO stateMachine transition dependent on existing ticket
-        tickets = day.child(0, 1)
-        tkt_list = tickets.data()
-        #print('len tkt_list ', len(tkt_list))
-        #if len(tkt_list) == 0:
-        self.stateMachine.new_date()
         self.clear_date()
-        self.setup_year(False)
+        # Colour in tickets:
+        self.model.set_year(self.year, False)
         self.selected_indices = indices
-
         self.timeLine.zero_time_list()
         self.get_track(date)
         self.display_tickets()
-        # date = day.child(0, 0).data()
-        # date = date.toString('dd.MM.yyyy')
 
     def get_track(self, date):
         """Gets GPS data for selected day and displays it"""
@@ -230,18 +220,22 @@ class MainWindow(QtGui.QMainWindow):
         # Adds a ticket to the model for this day
         day[0].add_ticket(day[1], day[2], 'Removal')
         self.display_tickets()
+        self.dirty = True
 
     def add_wrk_ticket(self):
         day = self.get_day()
         day[0].add_ticket(day[1], day[2], 'Work')
         self.display_tickets()
+        self.dirty = True
 
     def add_oth_ticket(self):
         day = self.get_day()
         day[0].add_ticket(day[1], day[2], 'Other')
         self.display_tickets()
+        self.dirty = True
 
     def display_tickets(self):
+        """Display tickets in jobTickets list widget"""
         day = self.get_day()
         ticket_list = day[0].get_ticket_list(day[1], day[2])
         self.ui.jobTickets.clear()
@@ -249,56 +243,25 @@ class MainWindow(QtGui.QMainWindow):
             pos = self.ui.jobTickets.count() + 1
             ticket_name = QtGui.QListWidgetItem()
             ticket_name.setText(ticket.get_name())
-            colour = QtGui.QColor(255, 255, 255)
-            ticket_name.setTextColor(colour)
             if ticket.get_cat() == 'Removal':
-                colour = QtGui.QColor(94, 89, 255)
+                colour = QtGui.QColor(117, 119, 255)
                 ticket_name.setBackgroundColor(colour)
             elif ticket.get_cat() == 'Work':
-                colour = QtGui.QColor(255, 139, 37)
+                colour = QtGui.QColor(255, 224, 128)
                 ticket_name.setBackgroundColor(colour)
             else:
-                colour = QtGui.QColor(127, 104, 255)
+                colour = QtGui.QColor(126, 232, 116)
                 ticket_name.setBackgroundColor(colour)
             self.ui.jobTickets.insertItem(pos, ticket_name)
         # Select last ticket added
         if len(ticket_list) == 1:
             self.ui.jobTickets.setCurrentItem(ticket_name)
             self.ui.jobTickets.setItemSelected(ticket_name, True)
-            self.add_ticket()
+            self.ui.jobTickets.select_ticket()
         if len(ticket_list) > 1:
             self.ui.jobTickets.setCurrentItem(ticket_name)
             self.ui.jobTickets.setItemSelected(ticket_name, True)
-            self.add_ticket()
-
-    def select_ticket(self):
-        """From clicking item in jobTickets"""
-        # print('')
-        # print('Ticket clicked')
-        self.stateMachine.use_ticket()
-        self.ui.hoursTable.fill_table()
-        self.ui.expensesTable.fill_table()
-
-    def add_ticket(self):
-        self.stateMachine.add_ticket()
-        self.ui.hoursTable.fill_table()
-        self.ui.expensesTable.fill_table()
-
-    def rename_ticket(self, item):
-        """If lamda is not used, self.ticket_changed(item_name) will be immediately
-        evaluated and then the result passed by the connect method. With lambda,
-        the interpreter knows to pass item_name to be evaluated subsequently"""
-        item.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled)
-        item_name = item.text()
-        self.ui.jobTickets.itemChanged.connect(lambda: self.tkt_name_changed(item_name))
-
-    def tkt_name_changed(self, old_name):
-        curr_item = self.ui.jobTickets.currentItem()
-        day = self.get_day()
-        ticket_list = day[0].get_ticket_list(day[1], day[2])
-        for tkt in ticket_list:
-            if tkt.get_name() == old_name:
-                tkt.set_name(curr_item.text())
+            self.ui.jobTickets.select_ticket()
 
     # GPS Tracks ##############################################
     def track_segment(self, start, end):
@@ -336,20 +299,19 @@ class MainWindow(QtGui.QMainWindow):
     def save(self):
         dataIO = DataIO(self)
         dataIO.save(self.model_dict)
+        self.dirty = False
 
     def test(self):
-        dataIO = DataIO(self)
-        dataIO.open()
+        return
 
-if __name__ == "__main__":
-    app = QtGui.QApplication(sys.argv)
-    splash_pix = QtGui.QPixmap("./Icons/icon_start.png")
-    splash = QtGui.QSplashScreen(splash_pix, Qt.Qt.WindowStaysOnTopHint)
-    splash.setMask(splash_pix.mask())
-    splash.show()
-    app.processEvents()
-    myapp = MainWindow()
-    #app.setStyleSheet(qdarkstyle.load_stylesheet(pyside=False))
-    myapp.show()
-    splash.finish(myapp)
-    sys.exit(app.exec_())
+    def closeEvent(self, event):
+        """On closing application window"""
+        if self.dirty:
+            reply = QtGui.QMessageBox.question(self, "UnSaved Data", "Save ?", \
+                                               QtGui.QMessageBox.Yes | QtGui.QMessageBox.No | QtGui.QMessageBox.Cancel)
+            if reply == QtGui.QMessageBox.Cancel:
+                event.ignore()
+            elif reply == QtGui.QMessageBox.Yes:
+                self.save()
+            elif reply == QtGui.QMessageBox.No:
+                pass

@@ -8,6 +8,7 @@ from TicketNotes import*
 from TrackTable import*
 from HoursTable import*
 from ExpensesTable import*
+from JobTickets import*
 
 try:
     _fromUtf8 = QtCore.QString.fromUtf8
@@ -38,7 +39,7 @@ class Ui_mainWindow(object):
         self.from_display = QtGui.QTextEdit()
         self.time_display = QtGui.QTextEdit()
         self.to_display = QtGui.QTextEdit()
-        self.jobTickets = QtGui.QListWidget()
+        # self.jobTickets = QtGui.QListWidget()
         self.button_add_ticket = QtGui.QPushButton("Add Ticket")
         self.menu_tickets = QtGui.QMenu()
         self.button_add_ticket.setMenu(self.menu_tickets)
@@ -49,6 +50,7 @@ class Ui_mainWindow(object):
         # Import widgets
         self.yearView = YearView(parent_window)
         self.mapView = MapView(parent_window)
+        self.jobTickets = JobTickets(parent_window)
         self.ticketNotes = TicketNotes(parent_window)
         self.trackTable = TrackTable(parent_window)
         self.hoursTable = HoursTable(parent_window)

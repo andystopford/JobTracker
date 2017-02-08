@@ -8,6 +8,9 @@ class DateDisplay(QtGui.QStyledItemDelegate):
         self.date_list =[]
         self.log_list = []
         self.parent = parent
+        self.today_row = 0
+        self.today_col = 0
+        self.today = True
 
     def setup(self, date_list, log_list):
         self.date_list = date_list
@@ -20,12 +23,11 @@ class DateDisplay(QtGui.QStyledItemDelegate):
         vert_header = self.parent.verticalHeader()
         cell_y = vert_header.sectionSize(0)
         pen = QtGui.QPen()
-        painter.setPen(pen)
-        # Point positions for colour coded fills
-        # Top left triangle
-        left_tri1 = QtCore.QPoint(option.rect.x() + cell_x, option.rect.y())
-        left_tri2 = QtCore.QPoint(option.rect.x(), option.rect.y())
-        left_tri3 = QtCore.QPoint(option.rect.x(), option.rect.y() + cell_y)
+        # Point positions for cells
+        point1 = QtCore.QPoint(option.rect.x() + (cell_x - 1), option.rect.y())
+        point2 = QtCore.QPoint(option.rect.x(), option.rect.y())
+        point3 = QtCore.QPoint(option.rect.x(), option.rect.y() + (cell_y - 1))
+        point4 = QtCore.QPoint(option.rect.x() + (cell_x - 1), option.rect.y() + (cell_y - 1))
 
         for date in self.date_list:
             row = date[1]  # month
@@ -38,22 +40,41 @@ class DateDisplay(QtGui.QStyledItemDelegate):
                 painter.setRenderHint(painter.Antialiasing)
                 # Fill in colour codes - log_date[0] = log_date, log_date[1] = month.
                 for log_date in self.log_list:
+                    outline = QtGui.QColor(255, 0, 0)
+                    pen.setColor(outline)
                     painter.setPen(Qt.Qt.NoPen)
                     if str(log_date[0]) == date[2] and log_date[1] == date[1] + 1:
-                        # Invoke draw_top_left_triangle()
-                        triangle = self.draw_top_left_triangle([left_tri1, left_tri2, left_tri3])
+                        # Invoke draw_triangle_left()
+                        triangle = self.draw_triangle_left([point1, point2, point3])
                         painter.setBrush(triangle[1])
                         painter.drawPolygon(triangle[0])
-
                 # Draw date text - must go last to be on top
                 painter.setPen((QtGui.QColor(0, 0, 0)))
+                if self.today:
+                    if self.today_row == row:
+                        if self.today_col == col:
+                            # Set text colour for today
+                            pen.setWidth(10)
+                            painter.setPen((QtGui.QColor(255, 0, 0)))
+                            outline = self.draw_outline([point1, point2, point3, point4])
+                            painter.drawPolygon(outline[0])
                 painter.drawText(date_pos, text)
                 painter.restore()
 
-    def draw_top_left_triangle(self, points):
+    def draw_triangle_left(self, points):
         """For GPS tracks"""
         tri = QtGui.QPolygon(points)
-        colour = QtGui.QColor(255, 150, 150)
+        colour = QtGui.QColor(160, 193, 146)
         return tri, colour
+    
+    def draw_outline(self, points):
+        """For highlighting today"""
+        outline = QtGui.QPolygon(points)
+        colour = QtGui.QColor(255, 0, 0)
+        return outline, colour
 
-
+    def mark_today(self, row, col, is_true):
+        """Identifies today and enables outlining"""
+        self.today_row = row
+        self.today_col = col
+        self.today = is_true

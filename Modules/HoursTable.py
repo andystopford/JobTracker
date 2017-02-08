@@ -1,6 +1,8 @@
+from GpsAnalyser import*
 from PyQt4 import QtCore, QtGui
 from Ticket import Track
 from TimeConverter import*
+
 
 class HoursTable(QtGui.QTableWidget):
     def __init__(self, parent):
@@ -94,6 +96,7 @@ class HoursTable(QtGui.QTableWidget):
         ticket.add_track(track)
         self.clear()
         self.fill_table()
+        self.parent.dirty = True
 
     def delete_track(self):
         ticket = self.get_ticket()
@@ -101,6 +104,7 @@ class HoursTable(QtGui.QTableWidget):
         ticket.delete_track(row)
         self.clear()
         self.fill_table()
+        self.parent.dirty = True
 
     def update_tracks(self):
         """Updates the current ticket with manually entered values and
@@ -109,8 +113,6 @@ class HoursTable(QtGui.QTableWidget):
         ticket = self.get_ticket()
         track_list = ticket.get_tracks()
         for t, track in enumerate(track_list):
-            #if not track.get_gps():
-                # Init manually entered track
             new = []
             for i in range(0, 5):
                 new_val = (self.item(t, i)).text()
@@ -118,9 +120,6 @@ class HoursTable(QtGui.QTableWidget):
                     new_val = tc.fix_lazy(new_val)
                 new.append(new_val)
             track.set_all(new[0], new[1], new[2], new[3], new[4])
-            #else:
-            #    new_val = (self.item(t, 4)).text()
-            #    track.set_notes(new_val)
         ticket.sort()
         self.clear()
         self.fill_table()
