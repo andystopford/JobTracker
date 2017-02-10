@@ -16,7 +16,8 @@ class DataIO:
         """Module to read/write disc files"""
         self.path = './Logs'
         self.parent = parent
-        self.user_path = "/home/andy/Dropbox/JobTrackerUser/"
+        # TODO This path is for testing only!
+        self.user_path = "/home/andy/Projects/Programming/Python/JobTracker2/JobTrackerUser"
 
     def get_gpx(self):
         """Copies .gpx files from Dropbox to ./Logs directory"""

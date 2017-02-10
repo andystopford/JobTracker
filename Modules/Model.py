@@ -30,13 +30,15 @@ class Model(QtGui.QStandardItemModel):
         for row in range(12):
             for col in range(37):
                 if (col % 7) - 6 == 0 or (col % 7) - 5 == 0:
+                    # Weekends
                     log_date = QtGui.QStandardItem()
                     self.setItem(row, col, log_date)
-                    self.item(row, col).setBackground(QtGui.QColor(160, 195, 255))
+                    self.item(row, col).setBackground(QtGui.QColor('#d3d3d6'))
                 else:
+                    # weekdays
                     log_date = QtGui.QStandardItem()
                     self.setItem(row, col, log_date)
-                    self.item(row, col).setBackground(QtGui.QColor(195, 218, 255))
+                    self.item(row, col).setBackground(QtGui.QColor('#dedee2'))
 
     def set_year(self, year, new):
         """Fills in date numbers and colours any cells with associated job tickets"""
@@ -68,11 +70,11 @@ class Model(QtGui.QStandardItemModel):
                         ticket_list = item.child(0, 1).data()
                         if len(ticket_list) > 0:
                             if ticket_list[0].get_cat() == 'Removal':
-                                colour = QtGui.QColor(132, 136, 244)
+                                colour = QtGui.QColor(176, 180, 255)
                             elif ticket_list[0].get_cat() == 'Work':
-                                colour = QtGui.QColor(249, 178, 156)
+                                colour = QtGui.QColor(172, 209, 158)
                             else:
-                                colour = QtGui.QColor(252, 234, 162)
+                                colour = QtGui.QColor(253, 160, 127)
                             item.setBackground(colour)
 
         self.mark_today(year_instance)

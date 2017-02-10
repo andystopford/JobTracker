@@ -3,7 +3,7 @@ from PyQt4 import QtCore, QtGui, Qt
 
 class DateDisplay(QtGui.QStyledItemDelegate):
     def __init__(self, parent):
-        """Colour codes any days with existing GPS files and fills in date text"""
+        """Colour codes any days from existing GPS files and fills in date text"""
         super(DateDisplay, self).__init__(parent)
         self.date_list =[]
         self.log_list = []
@@ -40,9 +40,8 @@ class DateDisplay(QtGui.QStyledItemDelegate):
                 painter.setRenderHint(painter.Antialiasing)
                 # Fill in colour codes - log_date[0] = log_date, log_date[1] = month.
                 for log_date in self.log_list:
-                    outline = QtGui.QColor(255, 0, 0)
-                    pen.setColor(outline)
                     painter.setPen(Qt.Qt.NoPen)
+                    #painter.setPen((QtGui.QColor(255, 0, 0)))
                     if str(log_date[0]) == date[2] and log_date[1] == date[1] + 1:
                         # Invoke draw_triangle_left()
                         triangle = self.draw_triangle_left([point1, point2, point3])
@@ -64,7 +63,7 @@ class DateDisplay(QtGui.QStyledItemDelegate):
     def draw_triangle_left(self, points):
         """For GPS tracks"""
         tri = QtGui.QPolygon(points)
-        colour = QtGui.QColor(160, 193, 146)
+        colour = QtGui.QColor(159, 159, 161)
         return tri, colour
     
     def draw_outline(self, points):

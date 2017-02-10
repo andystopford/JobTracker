@@ -8,8 +8,6 @@ class TrackTable(QtGui.QTableView):
         self.parent = parent
         horiz_header = self.horizontalHeader()
         horiz_header.setResizeMode(QtGui.QHeaderView.Stretch)
-        #vert_header = self.verticalHeader()
-        #vert_header.setResizeMode(QtGui.QHeaderView.Stretch)
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.connect(self, QtCore.SIGNAL("customContextMenuRequested(QPoint)"), self.right_click)
         self.track_list = []
@@ -18,24 +16,19 @@ class TrackTable(QtGui.QTableView):
         """Set up a QItemSelectionModel - sends the current and previous selection
         - we want the current ([0]) selection"""
         super(TrackTable, self).setModel(model)
-        #self.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
         self.connect(self.selectionModel(),
                      QtCore.SIGNAL("selectionChanged(QItemSelection, QItemSelection)"),
                      self.get_selection)
 
     def set_row_select(self):
         self.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
-        #print('OK')
 
     def get_selection(self):
         """Get the text for each item in the selected row"""
         indices = self.selectedIndexes()
-        index = indices[0]  # i.e. column 0
-        #print(index.row(), index.column())
         for i, item in enumerate(indices):
             index = indices[i]
             x = self.parent.trackModel.itemFromIndex(index)
-            #print(x.text())
             self.track_list.append(x)
 
     def right_click(self):

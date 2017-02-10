@@ -26,7 +26,20 @@ function del_track() {
     map.removeLayer(track);
     }
 
-// draw a marker to follow the track
+////////////////////////////////////////////////////////////
+// Layer group for start/finish markers
+var grp = L.layerGroup().addTo(map);
+
+//function add_layer_grp() {
+    //grp = L.layerGroup().addTo(map); // implicit global
+    //grp.addLayer(start_layer);
+    //}
+
+function clear_layer_grp() {
+    grp.clearLayers()
+    }
+
+ // draw a marker to follow the track
 var tracker = L.marker();
 
 function draw_tracker(lat, lng) {
@@ -43,19 +56,6 @@ function center_on_marker() {
 
 function move(lat, lng) {
     tracker.setLatLng([lat, lng]);
-    }
-
-////////////////////////////////////////////////////////////
-// Layer group for start/finish markers
-var grp = L.layerGroup().addTo(map);
-
-//function add_layer_grp() {
-    //grp = L.layerGroup().addTo(map); // implicit global
-    //grp.addLayer(start_layer);
-    //}
-
-function clear_layer_grp() {
-    grp.clearLayers()
     }
 
 ///////////////////////////////////////////////////////////

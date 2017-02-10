@@ -58,27 +58,18 @@ class MapView(QtWebKit.QWebView):
         else:
             self.draw_end(time_events[-1])
 
-    def draw_start(self, start, time):
-        start_lat = start[0]
-        start_lon = start[1]
-        block = str(self.parent.time_block)
-        time = str('<b>' + 'Block' + ' ' + block + ':' + '</b><br>' + time)
-        time = json.dumps(time)  # Convert Python string to JS
-        self.frame.evaluateJavaScript('add_start({}, {}, {})'.format(start_lat, start_lon, time))
-        self.frame.evaluateJavaScript('add_layer_grp();')
-
-    def draw_end(self, end):
-        end_lat = end[0]
-        end_lon = end[1]
-        self.frame.evaluateJavaScript('add_end({}, {});'.format(end_lat, end_lon))
-
-    def add_segment(self, leg_points):
+    def add_segment(self, leg_points, col=None):
         #self.frame.evaluateJavaScript('del_track();')
         place_list = []
         colour_list = ['#FF4503', '#9F09E8', '#03ACFF', '#1AE809', '#FFC50A']
         #for col, item in enumerate(colour_list):
         #    colour_list[col] = json.dumps(item)
-        curr_colour = colour_list[self.colour_index]
+        if not col:
+            curr_colour = colour_list[self.colour_index]
+        else:
+            curr_colour = col
+            print('col', col)
+        print(curr_colour)
         colour = json.dumps(curr_colour)
         for item in leg_points:
             lat = str(item.get_lat())
@@ -90,6 +81,22 @@ class MapView(QtWebKit.QWebView):
         else:
             self.colour_index = 0
         return curr_colour
+
+
+    def draw_start(self, start, time):
+        start_lat = start[0]
+        start_lon = start[1]
+        block = str(self.parent.time_block)
+        time = str('<b>' + 'Block' + ' ' + block + ':' + '</b><br>' + time)
+        time = json.dumps(time)  # Convert Python string to JS
+        self.frame.evaluateJavaScript('add_start({}, {}, {})'.format(start_lat, start_lon, time))
+        #self.frame.evaluateJavaScript('add_layer_grp();')
+
+    def draw_end(self, end):
+        end_lat = end[0]
+        end_lon = end[1]
+        self.frame.evaluateJavaScript('add_end({}, {});'.format(end_lat, end_lon))
+
 
     def test(self):
         test = self.frame.evaluateJavaScript('test();')

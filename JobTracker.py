@@ -15,7 +15,6 @@ from TimeLine import*
 from DateDisplay import*
 from TimeConverter import*
 from TrackModel import*
-import qdarkstyle
 
 
 class MainWindow(QtGui.QMainWindow):
@@ -48,7 +47,6 @@ class MainWindow(QtGui.QMainWindow):
         self.model_dict = {}
         self.key_list = []  # temp store for model_dict keys
         self.point_list = []
-        self.time_posn = ()
         self.dirty = False
         self.time_block = 1  # For map marker popups
         self.selected_indices = []
@@ -58,9 +56,11 @@ class MainWindow(QtGui.QMainWindow):
         self.startup()
 
     def eventFilter(self, source, event):
+        """Detects TicketNotes losing focus and saves its contents to the
+        current ticket"""
         if (event.type() == QtCore.QEvent.FocusOut and
                 source is self.ui.ticketNotes):
-            print('eventFilter: focus out')
+            #print('eventFilter: focus out')
             self.ui.ticketNotes.save()
         return super(MainWindow, self).eventFilter(source, event)
 
@@ -109,6 +109,9 @@ class MainWindow(QtGui.QMainWindow):
         date_list = self.model.set_year(self.year, new_year)
         self.dateDisplay.setup(date_list, log_list)
 
+    def test(self):
+        return
+
     def year_back(self):
         self.year -= 1
         self.clear_year()
@@ -150,12 +153,11 @@ class MainWindow(QtGui.QMainWindow):
         coords = gpsAnalyser.get_coords(bisect[0], bisect[1], bisect[2])
         posn = gpsAnalyser.find_posn(coords)
         self.ui.mapView.draw_tracker(posn)
-        self.timeLine.time_posn = (posn[0], posn[1])
+        self.timeLine.set_time_posn(posn[0], posn[1])
 
     def select_date(self, indices):
         index = indices[0]
         day = self.model.itemFromIndex(index)
-        #if day.child(0, 0) is not None:
         date = day.child(0, 0).data()  # QDate, e.g. (2016, 7, 15)
         self.ui.date_display.setText(date.toString())
         self.clear_date()
@@ -244,13 +246,13 @@ class MainWindow(QtGui.QMainWindow):
             ticket_name = QtGui.QListWidgetItem()
             ticket_name.setText(ticket.get_name())
             if ticket.get_cat() == 'Removal':
-                colour = QtGui.QColor(117, 119, 255)
+                colour = QtGui.QColor(176, 180, 255)
                 ticket_name.setBackgroundColor(colour)
             elif ticket.get_cat() == 'Work':
-                colour = QtGui.QColor(255, 224, 128)
+                colour = QtGui.QColor(172, 209, 158)
                 ticket_name.setBackgroundColor(colour)
             else:
-                colour = QtGui.QColor(126, 232, 116)
+                colour = QtGui.QColor(253, 160, 127)
                 ticket_name.setBackgroundColor(colour)
             self.ui.jobTickets.insertItem(pos, ticket_name)
         # Select last ticket added
@@ -263,14 +265,26 @@ class MainWindow(QtGui.QMainWindow):
             self.ui.jobTickets.setItemSelected(ticket_name, True)
             self.ui.jobTickets.select_ticket()
 
-    # GPS Tracks ##############################################
-    def track_segment(self, start, end):
+    def load_tracks(self):
+        """Loads previously saved tracks into mapView"""
+        tracks = self.ui.hoursTable.load_tracks()
+        for item in tracks:
+            track_seg = self.track_segment(item[0], item[1], item[2])
+            self.ui.mapView.add_segment(track_seg[0], track_seg[1])
+
+# GPS Tracks ##############################################
+    def track_segment(self, start, end, col=None):
+        """Selects the trackpoints between the specified times"""
         leg_points = []
         for point in self.point_list:
             if point.time >= start:
                 if point.time <= end:
                     leg_points.append(point)
-        colour = self.ui.mapView.add_segment(leg_points)
+        if col:
+            # Colours of previously saved tracks
+            colour = self.ui.mapView.add_segment(leg_points, col)
+        else:
+            colour = self.ui.mapView.add_segment(leg_points)
         return leg_points, colour
 
     def colour_cells(self, colour):
@@ -300,9 +314,6 @@ class MainWindow(QtGui.QMainWindow):
         dataIO = DataIO(self)
         dataIO.save(self.model_dict)
         self.dirty = False
-
-    def test(self):
-        return
 
     def closeEvent(self, event):
         """On closing application window"""

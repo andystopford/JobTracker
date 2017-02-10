@@ -3,6 +3,7 @@ from PyQt4 import QtGui
 
 class TicketNotes(QtGui.QTextEdit):
     def __init__(self, parent):
+        """Editable field for job notes"""
         super(TicketNotes, self).__init__(parent)
         self.parent = parent
 

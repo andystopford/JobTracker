@@ -9,6 +9,7 @@ class TimeLine:
         self.time_list = []
         self.tl_point_list = []
         self.event_count = 0
+        self.time_posn = ()
 
     def set_time_slider(self, point_list):
         """ Sets time_slider range. """
@@ -61,3 +62,6 @@ class TimeLine:
         self.event_count += 1
         # return to JT key_press_event
         return start_time, end_time, hours_done, self.tl_point_list, start, finish
+
+    def set_time_posn(self, lon, lat):
+        self.time_posn = (lon, lat)

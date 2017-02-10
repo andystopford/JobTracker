@@ -6,6 +6,7 @@ from TimeConverter import*
 
 class HoursTable(QtGui.QTableWidget):
     def __init__(self, parent):
+        """Displays hours and ,optionally, GPS track hours/distances"""
         super(HoursTable, self).__init__(parent)
         self.setDragDropMode(QtGui.QAbstractItemView.DropOnly)
         self.parent = parent
@@ -89,6 +90,7 @@ class HoursTable(QtGui.QTableWidget):
         return
 
     def add_track(self):
+        # TODO auto-add this, as per expenses table
         colour = QtGui.QColor(195, 218, 255)
         brush = QtGui.QBrush(colour)
         ticket = self.get_ticket()
@@ -148,4 +150,20 @@ class HoursTable(QtGui.QTableWidget):
         total_dist.setText(str(total_miles))
         total_dist.setBackground(brush)
         self.setItem(row_count - 1, 3, total_dist)
+
+    def load_tracks(self):
+        """Makes list of saved tracks to re-display in mapView"""
+        tc = TimeConverter()
+        tracks = []
+        ticket = self.get_ticket()
+        track_list = ticket.get_tracks()
+        for t, track in enumerate(track_list):
+            start = track.get_start()
+            start = tc.get_time_mins(start)
+            end = track.get_end()
+            end = tc.get_time_mins(end)
+            colour = track.get_colour()
+            tracks.append((start, end, colour))
+        return tracks
+
 

@@ -3,6 +3,7 @@ from PyQt4 import QtCore, QtGui
 
 class ExpensesTable(QtGui.QTableWidget):
     def __init__(self, parent):
+        """"""
         super(ExpensesTable, self).__init__(parent)
         self.parent = parent
         self.setRowCount(2)

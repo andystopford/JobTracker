@@ -16,17 +16,11 @@ class Ticket:
     def set_cat(self, tkt_cat):
         self.tkt_cat = tkt_cat
 
-    def get_name(self):
-        return self.name
-
-    def get_cat(self):
-        return self.tkt_cat
-
     def set_notes(self, notes):
         self.notes = notes
 
-    def get_notes(self):
-        return self.notes
+    def add_expense(self, expense):
+        self.expenses_list.append(expense)
 
     def add_track(self, track):
         self.track_list.append(track)
@@ -37,15 +31,21 @@ class Ticket:
         self.sort()
         return
 
+    def get_name(self):
+        return self.name
+
+    def get_cat(self):
+        return self.tkt_cat
+
     def get_tracks(self):
         return self.track_list
+
+    def get_notes(self):
+        return self.notes
 
     def sort(self):
         self.track_list.sort(key=methodcaller('get_start'))
         return
-
-    def add_expense(self, expense):
-        self.expenses_list.append(expense)
 
     def get_expenses(self):
         return self.expenses_list
@@ -85,18 +85,6 @@ class Track:
         colour = self.brush.color()
         colour = colour.name()
         return colour
-    
-    def set_start(self, start):
-        self.start = start
-
-    def set_end(self, end):
-        self.end = end
-
-    def set_hours(self, hours):
-        self.hours = hours
-
-    def set_miles(self, miles):
-        self.miles = miles
 
     def set_notes(self, notes):
         self.notes = notes

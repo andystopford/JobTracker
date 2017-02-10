@@ -16,6 +16,7 @@ class JobTickets(QtGui.QListWidget):
         self.parent.ui.ticketNotes.load_text()
         self.parent.ui.hoursTable.fill_table()
         self.parent.ui.expensesTable.fill_table()
+        self.parent.load_tracks()
 
     def rename_ticket(self, item):
         """If lamda is not used, self.ticket_changed(item_name) will be immediately
