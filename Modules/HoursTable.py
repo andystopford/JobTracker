@@ -90,7 +90,6 @@ class HoursTable(QtGui.QTableWidget):
         return
 
     def add_track(self):
-        # TODO auto-add this, as per expenses table
         colour = QtGui.QColor(195, 218, 255)
         brush = QtGui.QBrush(colour)
         ticket = self.get_ticket()

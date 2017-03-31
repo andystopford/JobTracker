@@ -15,6 +15,8 @@ from TimeLine import*
 from DateDisplay import*
 from TimeConverter import*
 from TrackModel import*
+from Timer import*
+from Explorer import*
 
 
 class MainWindow(QtGui.QMainWindow):
@@ -32,18 +34,29 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.button_forward.clicked.connect(self.year_forward)
         self.ui.button_save.clicked.connect(self.save)
         self.ui.time_slider.valueChanged.connect(self.get_curr_time)
+        self.ui.menu_track_cols.addAction('Autumn')
+        self.ui.menu_track_cols.addAction('BRG')
+        self.ui.menu_track_cols.addAction('HSV')
+        self.ui.menu_track_cols.addAction('Jet')
+        self.ui.menu_track_cols.triggered.connect(self.change_track_cols)
+        #self.ui.button_rev_cols.clicked.connect(self.rev_track_cols)
         self.ui.menu_tickets.addAction('Removal', self.add_rem_ticket)
         self.ui.menu_tickets.addAction('Work', self.add_wrk_ticket)
         self.ui.menu_tickets.addAction('Other', self.add_oth_ticket)
+        self.ui.button_start_pause.clicked.connect(self.start_timer)
+        self.ui.button_apply.clicked.connect(self.apply_timer)
 
         ##################################################
         # Initialise
         self.dateDisplay = DateDisplay(self.ui.yearView)
         self.trackModel = TrackModel(self)
         self.timeLine = TimeLine(self)
+        self.timer = Timer(self)
+        self.explorer = Explorer(self)
         self.table_proxy_model = QtGui.QSortFilterProxyModel()
         self.ui.trackTable.setDragDropMode(QtGui.QAbstractItemView.DragOnly)
         self.ui.ticketNotes.installEventFilter(self)
+        self.ui.expensesTable.installEventFilter(self)
         self.model_dict = {}
         self.key_list = []  # temp store for model_dict keys
         self.point_list = []
@@ -77,6 +90,9 @@ class MainWindow(QtGui.QMainWindow):
         if self.ui.expensesTable.hasFocus():
             if e.key() == QtCore.Qt.Key_Return:
                 self.ui.expensesTable.update()
+        if e.key() == QtCore.Qt.Key_F2:
+            self.explorer.show()
+
 
     def startup(self):
         dataIO = DataIO(self)
@@ -89,6 +105,21 @@ class MainWindow(QtGui.QMainWindow):
         self.init_model()
         self.setup_year(True)
         dataIO.open()
+
+    def disable_day(self):
+        """Sets ticket controls disabled until a ticket is
+        created/selected"""
+        # TODO add to Dia diagram
+        self.ui.ticketNotes.setEnabled(False)
+        self.ui.expensesTable.setEnabled(False)
+        self.ui.hoursTable.setEnabled(False)
+
+    def enable_day(self):
+        """Enables ticket controls when a ticket is selected"""
+        # TODO add to Dia
+        self.ui.ticketNotes.setEnabled(True)
+        self.ui.expensesTable.setEnabled(True)
+        self.ui.hoursTable.setEnabled(True)
 
     def init_model(self):
         """Model initialised - called at startup so calendar dates
@@ -140,6 +171,7 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.expensesTable.reset()
         self.trackModel.reset()
         self.point_list = []
+        self.disable_day()
         return
 
     def get_curr_time(self, time):
@@ -167,6 +199,7 @@ class MainWindow(QtGui.QMainWindow):
         self.timeLine.zero_time_list()
         self.get_track(date)
         self.display_tickets()
+        self.clear_timer()
 
     def get_track(self, date):
         """Gets GPS data for selected day and displays it"""
@@ -175,6 +208,7 @@ class MainWindow(QtGui.QMainWindow):
         gpsAnalyser = GpsAnalyser(self)
         self.point_list = gpsAnalyser.get_data(date)
         self.ui.mapView.draw_track(self.point_list)
+        self.ui.mapView.draw_waypoints(self.point_list)
         set_times = self.timeLine.set_time_slider(self.point_list)
         self.ui.time_slider.setRange(0, set_times[2])
         tc = TimeConverter()
@@ -184,6 +218,19 @@ class MainWindow(QtGui.QMainWindow):
         to_time = tc.get_time_hrs_mins(set_times[1])
         self.ui.to_display.setText(to_time)
         self.ui.to_display.setAlignment(Qt.Qt.AlignCenter)
+
+    def change_track_cols(self, act):
+        track_col = act.text()
+        if act.text() == 'Autumn':
+            self.ui.mapView.set_colormap(0)
+        elif act.text() == 'BRG':
+            self.ui.mapView.set_colormap(1)
+        elif act.text() == 'HSV':
+            self.ui.mapView.set_colormap(2)
+        elif act.text() == 'Jet':
+            self.ui.mapView.set_colormap(3)
+        self.ui.mapView.draw_track(self.point_list)
+        self.ui.button_track_cols.setText(act.text())
 
     def display_times(self, time_events):
         self.ui.mapView.marker_calc(time_events[0], time_events[3])
@@ -215,6 +262,7 @@ class MainWindow(QtGui.QMainWindow):
         indices = self.selected_indices
         row = indices[0].row()
         col = indices[0].column()
+        self.ui.ticketNotes.setEnabled(False)
         return model, row, col
 
     def add_rem_ticket(self):
@@ -249,10 +297,10 @@ class MainWindow(QtGui.QMainWindow):
                 colour = QtGui.QColor(176, 180, 255)
                 ticket_name.setBackgroundColor(colour)
             elif ticket.get_cat() == 'Work':
-                colour = QtGui.QColor(172, 209, 158)
+                colour = QtGui.QColor(253, 160, 127)
                 ticket_name.setBackgroundColor(colour)
             else:
-                colour = QtGui.QColor(253, 160, 127)
+                colour = QtGui.QColor(172, 209, 158)
                 ticket_name.setBackgroundColor(colour)
             self.ui.jobTickets.insertItem(pos, ticket_name)
         # Select last ticket added
@@ -309,6 +357,34 @@ class MainWindow(QtGui.QMainWindow):
             #print(d[3])
             total += d[3]
         return total
+
+# Time ###################################################
+    def start_timer(self):
+        # TODO lock this to today's date and ensure warning on closing
+        # TODO add timer to Dia
+        self.timer.timer_start()
+        self.ui.button_start_pause.clicked.disconnect(self.start_timer)
+        self.ui.button_start_pause.clicked.connect(self.pause_timer)
+        self.ui.button_start_pause.setText('Pause')
+        self.ui.button_apply.setEnabled(False)
+
+    def pause_timer(self):
+        time = self.timer.timer_pause()
+        self.ui.time_total.setText(time)
+        self.ui.button_start_pause.clicked.disconnect(self.pause_timer)
+        self.ui.button_start_pause.clicked.connect(self.start_timer)
+        self.ui.button_start_pause.setText('Start')
+        self.ui.button_apply.setEnabled(True)
+
+    def apply_timer(self):
+        return
+
+    def clear_timer(self):
+        self.timer.timer_clear()
+        self.ui.time_running.setText('')
+        self.ui.time_total.setText('')
+
+# Save and close ####################################################
 
     def save(self):
         dataIO = DataIO(self)

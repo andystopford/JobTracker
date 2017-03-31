@@ -17,7 +17,7 @@ class DataIO:
         self.path = './Logs'
         self.parent = parent
         # TODO This path is for testing only!
-        self.user_path = "/home/andy/Projects/Programming/Python/JobTracker2/JobTrackerUser"
+        self.user_path = "/home/andy/Projects/Programming/Python/JobTracker2/JobTrackerUser/"
 
     def get_gpx(self):
         """Copies .gpx files from Dropbox to ./Logs directory"""
@@ -45,6 +45,7 @@ class DataIO:
         """Open user data"""
         try:
             path = self.user_path
+            print(path + 'years.xml')
             with open(path + 'years.xml', "r") as fo:
                 tree = ET.parse(fo)
                 root = tree.getroot()

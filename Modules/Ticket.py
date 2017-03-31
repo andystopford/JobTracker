@@ -51,8 +51,6 @@ class Ticket:
         return self.expenses_list
 
 
-
-
 class Track:
     def __init__(self, start, end, hours, miles, notes, brush):
         """Start, end, hours and miles - from GPS or manually added"""

@@ -14,16 +14,32 @@ if(typeof MainWindow != 'undefined') {
 }
 
 // Draw track from GPS points
-var track = L.polyline({color: 'red'});
+var track_layer_grp = L.layerGroup().addTo(map);
 
-function add_track(latlngs) {
-    track.addTo(map);
-    track.setLatLngs([latlngs]);
-    track.setStyle({color: '#4E47AB', dashArray: '5, 10', weight: 2});
+function add_track(latlngs, colour) {
+    track_layer = L.polyline({color: 'red'})
+    track_layer.setLatLngs([latlngs])
+    track_layer.setStyle({color: colour, dashArray: '5, 10', weight: 2})
+    track_layer_grp.addLayer(track_layer)
     }
 
-function del_track() {
-    map.removeLayer(track);
+function clear_tracks() {
+    track_layer_grp.clearLayers()
+    }
+
+// Draw waypoints
+var waypoint_grp  = L.layerGroup().addTo(map);
+
+function add_waypoint(latlng, colour) {
+    waypoint_layer = L.circle()
+    waypoint_layer.setLatLng(latlng)
+    waypoint_layer.setRadius(20)
+    waypoint_layer.setStyle({color: colour})
+    waypoint_grp.addLayer(waypoint_layer)
+    }
+
+function clear_waypoints() {
+    waypoint_grp.clearLayers()
     }
 
 ////////////////////////////////////////////////////////////
@@ -66,7 +82,6 @@ function add_segment(latlngs, colour) {
     segment_layer.setLatLngs([latlngs]);
     segment_layer.setStyle({color: colour});
     }
-
 /////////////////////////////////////////////////////////////
 // start and end markers
 function add_start(lat, lng, time) {

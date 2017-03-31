@@ -55,8 +55,8 @@ class DateDisplay(QtGui.QStyledItemDelegate):
                             # Set text colour for today
                             pen.setWidth(10)
                             painter.setPen((QtGui.QColor(255, 0, 0)))
-                            outline = self.draw_outline([point1, point2, point3, point4])
-                            painter.drawPolygon(outline[0])
+                            #outline = self.draw_outline([point1, point2, point3, point4])
+                            #painter.drawPolygon(outline[0])
                 painter.drawText(date_pos, text)
                 painter.restore()
 

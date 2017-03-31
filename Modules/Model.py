@@ -3,7 +3,7 @@ from itertools import cycle, islice
 
 from PyQt4 import QtGui, QtCore
 from Ticket import Ticket
-from Year import*
+from Year import *
 
 
 class Model(QtGui.QStandardItemModel):
@@ -70,16 +70,35 @@ class Model(QtGui.QStandardItemModel):
                         ticket_list = item.child(0, 1).data()
                         if len(ticket_list) > 0:
                             if ticket_list[0].get_cat() == 'Removal':
-                                colour = QtGui.QColor(176, 180, 255)
+                                if self.parent.explorer.ui.rem_chkBox.isChecked():
+                                    colour = QtGui.QColor(176, 180, 255)
+                                else:
+                                    colour = self.is_weekday(curr_date)
                             elif ticket_list[0].get_cat() == 'Work':
-                                colour = QtGui.QColor(172, 209, 158)
+                                if self.parent.explorer.ui.wrk_chkBox.isChecked():
+                                    colour = QtGui.QColor(253, 160, 127)
+                                else:
+                                    colour = self.is_weekday(curr_date)
                             else:
-                                colour = QtGui.QColor(253, 160, 127)
+                                if self.parent.explorer.ui.othr_chkBox.isChecked():
+                                    colour = QtGui.QColor(172, 209, 158)
+                                else:
+                                    colour = self.is_weekday(curr_date)
                             item.setBackground(colour)
 
         self.mark_today(year_instance)
         # return to JT setup_year()
         return date_list
+
+    def is_weekday(self, col):
+        """For restoring background colour if ticket removed/filtered"""
+        if (col % 7) - 6 == 0 or (col % 7) - 5 == 0:
+            # Weekends
+            colour = QtGui.QColor('#d3d3d6')
+        else:
+            # weekdays
+            colour = QtGui.QColor('#dedee2')
+        return colour
 
     def mark_today(self, year_instance):
         """Outline today"""
@@ -99,7 +118,7 @@ class Model(QtGui.QStandardItemModel):
         day_item = self.item(row, col)
         tickets = day_item.child(0, 1)
         ticket_list = tickets.data()
-        name = cat # + ' ' + str(len(ticket_list) + 1)
+        name = cat  # + ' ' + str(len(ticket_list) + 1)
         ticket.set_name(name)
         ticket.set_cat(cat)
         ticket_list.append(ticket)

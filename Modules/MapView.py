@@ -1,6 +1,7 @@
 import json
 import sys
 
+import matplotlib.cm as cm
 from PyQt4 import QtCore, QtWebKit
 
 sys.path.append('./Scripts/')
@@ -17,6 +18,7 @@ class MapView(QtWebKit.QWebView):
         self.frame = self.page().mainFrame()
         self.layer_name = 0
         self.colour_index = 0
+        self.colormap = cm.autumn
 
     def load_map(self):
         with open('./Scripts/map.js', 'r') as f:
@@ -25,21 +27,56 @@ class MapView(QtWebKit.QWebView):
     def clear_map(self):
         """Removes previously drawn tracks and markers"""
         home = [51.1595954895, 0.260109901428]
-        self.frame.evaluateJavaScript('del_track();')
+        self.frame.evaluateJavaScript('clear_tracks();')
         self.frame.evaluateJavaScript('clear_layer_grp();')
+        self.frame.evaluateJavaScript('clear_waypoints();')
         self.frame.evaluateJavaScript('move({}, {});'.format(home[0], home[1]))
 
     def draw_track(self, point_list):
-        # a_point = TrackPoint(pointID, time, lat, lon, course)
-        self.frame.evaluateJavaScript('del_track();')
-        self.frame.evaluateJavaScript('clear_layer_grp();')
+        """Breaks TrackPoint list into overlapping pairs and draws a
+        polyline for each pair, coloured from a cmap gradient"""
+        pair_list = []
+        cmap = self.colormap
+        pairs = [point_list[i:i+2] for i in range(0, len(point_list), 1)]
+        for pair in pairs:
+            # Pairs of TrackPoints
+            pair_list.append(pair)
+        for i, pair in enumerate(pair_list):
+            colour = cmap(i/len(pair_list))
+            # Convert to Hex:
+            colour = self.convert_colour(colour)
+            place_list = []
+            for item in pair:
+                lat = str(item.get_lat())
+                lon = str(item.get_lon())
+                place_list.append([lat, lon])
+            self.frame.evaluateJavaScript('add_track({}, {});'.format(place_list, colour))
+
+    def draw_waypoints(self, point_list):
+        """Adds a marker to distinguish recorded waypoints from
+        the interpolated marker position"""
+        cmap = self.colormap
         place_list = []
-        self.colour_index = 0
         for item in point_list:
             lat = str(item.get_lat())
             lon = str(item.get_lon())
             place_list.append([lat, lon])
-        self.frame.evaluateJavaScript('add_track({});'.format(place_list))
+        for i, posn in enumerate(place_list):
+            colour = cmap(i/len(place_list))
+            colour = self.convert_colour(colour)
+            lat = posn[0]
+            lon = posn[1]
+            self.frame.evaluateJavaScript('add_waypoint({}, {});'.format([lat, lon], colour))
+
+    def set_colormap(self, colormap):
+        colormap_list = [cm.autumn, cm.brg, cm.hsv, cm.jet]
+        self.colormap = colormap_list[colormap]
+
+    def convert_colour(self, colour):
+        colour = '#%02x%02x%02x' % (255 * colour[0], 255 * colour[1], 255 * colour[2])
+        colour = str(colour)
+        colour = ' " ' + colour + ' " '
+        return colour
 
     def draw_tracker(self, posn):
         lat = posn[0]
@@ -59,17 +96,12 @@ class MapView(QtWebKit.QWebView):
             self.draw_end(time_events[-1])
 
     def add_segment(self, leg_points, col=None):
-        #self.frame.evaluateJavaScript('del_track();')
         place_list = []
         colour_list = ['#FF4503', '#9F09E8', '#03ACFF', '#1AE809', '#FFC50A']
-        #for col, item in enumerate(colour_list):
-        #    colour_list[col] = json.dumps(item)
         if not col:
             curr_colour = colour_list[self.colour_index]
         else:
             curr_colour = col
-            print('col', col)
-        print(curr_colour)
         colour = json.dumps(curr_colour)
         for item in leg_points:
             lat = str(item.get_lat())
@@ -82,7 +114,6 @@ class MapView(QtWebKit.QWebView):
             self.colour_index = 0
         return curr_colour
 
-
     def draw_start(self, start, time):
         start_lat = start[0]
         start_lon = start[1]
@@ -90,13 +121,11 @@ class MapView(QtWebKit.QWebView):
         time = str('<b>' + 'Block' + ' ' + block + ':' + '</b><br>' + time)
         time = json.dumps(time)  # Convert Python string to JS
         self.frame.evaluateJavaScript('add_start({}, {}, {})'.format(start_lat, start_lon, time))
-        #self.frame.evaluateJavaScript('add_layer_grp();')
 
     def draw_end(self, end):
         end_lat = end[0]
         end_lon = end[1]
         self.frame.evaluateJavaScript('add_end({}, {});'.format(end_lat, end_lon))
-
 
     def test(self):
         test = self.frame.evaluateJavaScript('test();')
