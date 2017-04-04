@@ -220,7 +220,7 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.to_display.setAlignment(Qt.Qt.AlignCenter)
 
     def change_track_cols(self, act):
-        track_col = act.text()
+        # track_col = act.text()
         if act.text() == 'Autumn':
             self.ui.mapView.set_colormap(0)
         elif act.text() == 'BRG':

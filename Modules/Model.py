@@ -11,10 +11,10 @@ class Model(QtGui.QStandardItemModel):
         """The model underlying YearView - contains job tickets
                 associated with days."""
         super(Model, self).__init__(parent)
-
         self.parent = parent
         self.setRowCount(12)
         self.setColumnCount(37)
+        self.search_list = []
         self.setup()
 
     def setup(self):
@@ -85,6 +85,11 @@ class Model(QtGui.QStandardItemModel):
                                 else:
                                     colour = self.is_weekday(curr_date)
                             item.setBackground(colour)
+                            if len(self.search_list) > 0:
+                                for result in self.search_list:
+                                    if ticket_list[0].get_name() == (result.get_name()):
+                                        colour = QtGui.QColor(255, 0, 0)
+                                        item.setBackground(colour)
 
         self.mark_today(year_instance)
         # return to JT setup_year()

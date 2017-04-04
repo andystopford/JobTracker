@@ -5,6 +5,7 @@ from PyQt4 import QtCore, QtGui
 sys.path.append("./UI")
 from Explorer_UI import Explorer_Ui
 
+
 class Explorer(QtGui.QMainWindow):
     def __init__(self, parent=None):
         QtGui.QWidget.__init__(self, parent, QtCore.Qt.WindowStaysOnTopHint)
@@ -35,12 +36,14 @@ class Explorer(QtGui.QMainWindow):
             return
 
     def search(self):
+        """Searches tickets for entered text"""
+        search_list = self.parent.model.search_list
+        del search_list[:]
         word_list = []
         model = self.parent.model
         search_word = str(self.ui.search_box.toPlainText())
         for item in search_word.split():
             word_list.append(item)
-        result = []
         for row in range(12):
             for col in range(37):
                 day_item = model.item(row, col)
@@ -48,15 +51,21 @@ class Explorer(QtGui.QMainWindow):
                     if day_item.child(0, 1).data():
                         tickets = day_item.child(0, 1).data()
                         for ticket in tickets:
-                            # test if category checked:
-                            cat = ticket.get_cat()
-                            test_cat_chkd = self.search_tkt_cat(cat)
                             # Now filter YearView highlighting
                             name = ticket.get_name()
-                            print(ticket.get_cat())
+                            notes = ticket.get_notes()
                             for item in word_list:
                                 if item.lower() in name.lower():
-                                    print(name, row, col)
+                                    #print('name', name)
+                                    search_list.append(ticket)
+                                if notes:
+                                    if item.lower() in notes.lower():
+                                        #print(notes)
+                                        search_list.append(ticket)
+        for item in search_list:
+            print(item.get_name())
+        self.parent.model.set_year(self.parent.year, False)
+
 
     def search_tkt_cat(self, cat):
         if self.ui.rem_chkBox.isChecked():
