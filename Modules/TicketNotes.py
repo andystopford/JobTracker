@@ -28,7 +28,8 @@ class TicketNotes(QtGui.QTextEdit):
         """Saves current text to current ticket"""
         ticket = self.get_ticket()
         text = self.toPlainText()
-        ticket.set_notes(text)
+        if text:
+            ticket.set_notes(text)
         self.parent.dirty = True
 
 

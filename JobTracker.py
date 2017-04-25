@@ -87,9 +87,11 @@ class MainWindow(QtGui.QMainWindow):
         if self.ui.hoursTable.hasFocus():
             if e.key() == QtCore.Qt.Key_Return:
                 self.ui.hoursTable.update_tracks()
+                self.enable_day()
         if self.ui.expensesTable.hasFocus():
             if e.key() == QtCore.Qt.Key_Return:
                 self.ui.expensesTable.update()
+                self.enable_day()
         if e.key() == QtCore.Qt.Key_F2:
             self.explorer.show()
 

@@ -11,13 +11,17 @@ class Explorer(QtGui.QMainWindow):
         QtGui.QWidget.__init__(self, parent, QtCore.Qt.WindowStaysOnTopHint)
         self.ui = Explorer_Ui()
         self.ui.setup_ui(self)
-        self.resize(400, 500)
+        #self.resize(400, 500)
         self.setWindowTitle("JobTracker Explorer")
         self.parent = parent
         # TODO This path is for testing only!
         self.user_path = "/home/andy/Projects/Programming/Python/JobTracker2/JobTrackerUser/"
         # Signals
-        self.ui.search_button.clicked.connect(self.search)
+        self.ui.name_clear_button.clicked.connect(self.clear_names)
+        self.ui.notes_clear_button.clicked.connect(self.clear_notes)
+        self.ui.name_search_button.clicked.connect(self.search_name)
+        self.ui.notes_search_button.clicked.connect(self.search_notes)
+        self.ui.filter_clr_butn.clicked.connect(self.clear_all)
         self.ui.rem_chkBox.stateChanged.connect(self.chkBox_changed)
         self.ui.wrk_chkBox.stateChanged.connect(self.chkBox_changed)
         self.ui.othr_chkBox.stateChanged.connect(self.chkBox_changed)
@@ -35,50 +39,79 @@ class Explorer(QtGui.QMainWindow):
             # Occurs on startup before a model has been initialised
             return
 
-    def search(self):
+    def search_name(self):
+        self.search('name')
+
+    def search_notes(self):
+        self.search('notes')
+
+    def search(self, type):
         """Searches tickets for entered text"""
-        search_list = self.parent.model.search_list
-        del search_list[:]
-        word_list = []
+        if type == 'name':
+            del self.parent.model.name_search_list[:]
+        if type == 'notes':
+            del self.parent.model.notes_search_list[:]
+        name_word_list = []
+        notes_word_list = []
         model = self.parent.model
-        search_word = str(self.ui.search_box.toPlainText())
-        for item in search_word.split():
-            word_list.append(item)
+        name_search = str(self.ui.name_search_box.toPlainText())
+        notes_search = str(self.ui.notes_search_box.toPlainText())
+        for item in name_search.split():
+            name_word_list.append(item)
+        for item in notes_search.split():
+            notes_word_list.append(item)
         for row in range(12):
             for col in range(37):
-                day_item = model.item(row, col)
+                day_item = model.item(row, col)     # i.e. a day QItem
                 if day_item.child(0, 1):
                     if day_item.child(0, 1).data():
                         tickets = day_item.child(0, 1).data()
                         for ticket in tickets:
-                            # Now filter YearView highlighting
-                            name = ticket.get_name()
-                            notes = ticket.get_notes()
-                            for item in word_list:
-                                if item.lower() in name.lower():
-                                    #print('name', name)
-                                    search_list.append(ticket)
-                                if notes:
-                                    if item.lower() in notes.lower():
-                                        #print(notes)
-                                        search_list.append(ticket)
-        for item in search_list:
-            print(item.get_name())
+                            # Is the cat filter on?
+                            cats = self.check_cat_checked()
+                            for cat in cats:
+                                if ticket.get_cat() == cat:
+                                    # Now filter YearView highlighting
+                                    name = ticket.get_name()
+                                    notes = ticket.get_notes()
+                                    for item in name_word_list:
+                                        # This is the bit that doesn't work properly:
+                                        if item.lower() in name.lower():
+                                            self.parent.model.name_search_list.append(day_item)
+                                    for item in notes_word_list:
+                                        if notes:
+                                            if item.lower() in notes.lower():
+                                                #print(row, col, name, day_item)
+                                                #print(notes)
+                                                self.parent.model.notes_search_list.append(day_item)
         self.parent.model.set_year(self.parent.year, False)
 
-
-    def search_tkt_cat(self, cat):
+    def check_cat_checked(self):
+        checked_list = []
         if self.ui.rem_chkBox.isChecked():
-            if cat == 'Removal':
-                return True
+            checked_list.append('Removal')
         if self.ui.wrk_chkBox.isChecked():
-            if cat == 'Work':
-                return True
+            checked_list.append('Work')
         if self.ui.othr_chkBox.isChecked():
-            if cat == 'Other':
-                return True
-        else:
-            return False
+            checked_list.append('Other')
+        return checked_list
+
+    def clear_names(self):
+        self.ui.name_search_box.clear()
+        del self.parent.model.name_search_list[:]
+        self.parent.model.set_year(self.parent.year, False)
+
+    def clear_notes(self):
+        self.ui.notes_search_box.clear()
+        del self.parent.model.notes_search_list[:]
+        self.parent.model.set_year(self.parent.year, False)
+
+    def clear_all(self):
+        self.ui.name_search_box.clear()
+        self.ui.notes_search_box.clear()
+        del self.parent.model.name_search_list[:]
+        del self.parent.model.notes_search_list[:]
+        self.parent.model.set_year(self.parent.year, False)
 
 
 class QColorButton(QtGui.QPushButton):

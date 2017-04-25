@@ -43,8 +43,10 @@ class HoursTable(QtGui.QTableWidget):
             track = Track(trk[0], trk[1], trk[2], trk[3], '', brush)
             ticket.add_track(track)
         self.fill_table()
+        self.parent.enable_day()    # reqd to re-enable ticketNotes
 
     def decode_data(self, byte_array):
+        """Data from drop event"""
         ds = QtCore.QDataStream(byte_array)
         row = ds.readInt32()  # gives correct row/col numbers
         return row
