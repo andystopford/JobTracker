@@ -10,6 +10,7 @@ class YearView(QtGui.QTableView):
         horiz_header.setResizeMode(QtGui.QHeaderView.Stretch)
         vert_header = self.verticalHeader()
         vert_header.setResizeMode(QtGui.QHeaderView.Stretch)
+        self.setEditTriggers(QtGui.QAbstractItemView.NoEditTriggers)
 
     def set_selection_model(self, model):
         """
@@ -24,5 +25,12 @@ class YearView(QtGui.QTableView):
     def get_selection(self):
         indices = self.selectedIndexes()
         self.parent.select_date(indices)
+
+    def keyPressEvent(self, e):
+        """Needed because edit triggers are disabled to prevent view entering
+        edit mode on a key press (from jobTracker.py)"""
+        if e.key() == QtCore.Qt.Key_F2:
+            self.parent.explorer.show()
+        return
 
 

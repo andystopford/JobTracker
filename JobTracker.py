@@ -1,3 +1,17 @@
+######################################################################
+# Copyright (C)2017 Andy Stopford
+# This is free software: you can redistribute it and/or modify
+# under the terms of the GNU General Public License
+# as published by the Free Software Foundation; version 2.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, see <http://www.gnu.org/licenses/>.
+#
+# JobTracker version 2.1  21/05/17
+#######################################################################
 import sys
 sys.path.append("./Modules")
 sys.path.append("./UI")
@@ -5,18 +19,17 @@ sys.path.append("./Icons")
 from PyQt4 import QtCore, QtGui, Qt
 import datetime
 from UI import Ui_mainWindow
-from IO import*
-from Model import*
-from YearView import*
-from MapView import*
-from GpsAnalyser import*
-from TrackPoint import*
-from TimeLine import*
-from DateDisplay import*
-from TimeConverter import*
-from TrackModel import*
-from Timer import*
-from Explorer import*
+from IO import *
+from Model import *
+from YearView import *
+from MapView import *
+from GpsAnalyser import *
+from TrackPoint import *
+from TimeLine import *
+from DateDisplay import *
+from TimeConverter import *
+from TrackModel import *
+from Explorer import *
 
 
 class MainWindow(QtGui.QMainWindow):
@@ -39,24 +52,24 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.menu_track_cols.addAction('HSV')
         self.ui.menu_track_cols.addAction('Jet')
         self.ui.menu_track_cols.triggered.connect(self.change_track_cols)
-        #self.ui.button_rev_cols.clicked.connect(self.rev_track_cols)
+        # self.ui.button_rev_cols.clicked.connect(self.rev_track_cols)
         self.ui.menu_tickets.addAction('Removal', self.add_rem_ticket)
         self.ui.menu_tickets.addAction('Work', self.add_wrk_ticket)
         self.ui.menu_tickets.addAction('Other', self.add_oth_ticket)
-        self.ui.button_start_pause.clicked.connect(self.start_timer)
-        self.ui.button_apply.clicked.connect(self.apply_timer)
 
         ##################################################
         # Initialise
         self.dateDisplay = DateDisplay(self.ui.yearView)
         self.trackModel = TrackModel(self)
         self.timeLine = TimeLine(self)
-        self.timer = Timer(self)
         self.explorer = Explorer(self)
+        self.model = None
         self.table_proxy_model = QtGui.QSortFilterProxyModel()
         self.ui.trackTable.setDragDropMode(QtGui.QAbstractItemView.DragOnly)
         self.ui.ticketNotes.installEventFilter(self)
         self.ui.expensesTable.installEventFilter(self)
+        self.ui.job_name_box.installEventFilter(self)
+        self.ui.paymentTable.installEventFilter(self)
         self.model_dict = {}
         self.key_list = []  # temp store for model_dict keys
         self.point_list = []
@@ -72,9 +85,16 @@ class MainWindow(QtGui.QMainWindow):
         """Detects TicketNotes losing focus and saves its contents to the
         current ticket"""
         if (event.type() == QtCore.QEvent.FocusOut and
-                source is self.ui.ticketNotes):
-            #print('eventFilter: focus out')
+                    source is self.ui.ticketNotes):
             self.ui.ticketNotes.save()
+        if (event.type() == QtCore.QEvent.FocusOut and
+                    source is self.ui.job_name_box):
+            job = self.ui.job_name_box.text()
+            self.set_job(job)
+        if (event.type() == QtCore.QEvent.FocusOut and
+                    source is self.ui.paymentTable):
+            self.ui.paymentTable.update()
+            print('pay tab out')
         return super(MainWindow, self).eventFilter(source, event)
 
     def keyPressEvent(self, e):
@@ -92,9 +112,12 @@ class MainWindow(QtGui.QMainWindow):
             if e.key() == QtCore.Qt.Key_Return:
                 self.ui.expensesTable.update()
                 self.enable_day()
+        if self.ui.paymentTable.hasFocus():
+            if e.key() == QtCore.Qt.Key_Return:
+                self.ui.paymentTable.update()
+                print('payment')
         if e.key() == QtCore.Qt.Key_F2:
             self.explorer.show()
-
 
     def startup(self):
         dataIO = DataIO(self)
@@ -111,17 +134,19 @@ class MainWindow(QtGui.QMainWindow):
     def disable_day(self):
         """Sets ticket controls disabled until a ticket is
         created/selected"""
-        # TODO add to Dia diagram
+        self.ui.job_name_box.setEnabled(False)
         self.ui.ticketNotes.setEnabled(False)
         self.ui.expensesTable.setEnabled(False)
         self.ui.hoursTable.setEnabled(False)
+        self.ui.paymentTable.setEnabled(False)
 
     def enable_day(self):
         """Enables ticket controls when a ticket is selected"""
-        # TODO add to Dia
+        self.ui.job_name_box.setEnabled(True)
         self.ui.ticketNotes.setEnabled(True)
         self.ui.expensesTable.setEnabled(True)
         self.ui.hoursTable.setEnabled(True)
+        self.ui.paymentTable.setEnabled(True)
 
     def init_model(self):
         """Model initialised - called at startup so calendar dates
@@ -166,11 +191,13 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.time_display.clear()
         self.ui.to_display.clear()
         self.ui.jobTickets.clear()
+        self.ui.job_name_box.clear()
         self.ui.ticketNotes.clear()
         self.ui.hoursTable.clear()
         self.ui.hoursTable.reset()
         self.ui.expensesTable.clear()
         self.ui.expensesTable.reset()
+        self.ui.paymentTable.clear()
         self.trackModel.reset()
         self.point_list = []
         self.disable_day()
@@ -201,7 +228,7 @@ class MainWindow(QtGui.QMainWindow):
         self.timeLine.zero_time_list()
         self.get_track(date)
         self.display_tickets()
-        self.clear_timer()
+        # self.clear_timer()
 
     def get_track(self, date):
         """Gets GPS data for selected day and displays it"""
@@ -264,8 +291,19 @@ class MainWindow(QtGui.QMainWindow):
         indices = self.selected_indices
         row = indices[0].row()
         col = indices[0].column()
-        self.ui.ticketNotes.setEnabled(False)
+        # self.ui.ticketNotes.setEnabled(False)
         return model, row, col
+
+    def get_ticket(self):
+        day = self.get_day()
+        tkt_name = self.ui.jobTickets.currentItem()
+        if not tkt_name:
+            print('get_ticket() - no ticket selected')
+            return
+        else:
+            tkt_name = tkt_name.text()
+            ticket = day[0].get_ticket(day[1], day[2], tkt_name)
+            return ticket
 
     def add_rem_ticket(self):
         day = self.get_day()
@@ -291,29 +329,34 @@ class MainWindow(QtGui.QMainWindow):
         day = self.get_day()
         ticket_list = day[0].get_ticket_list(day[1], day[2])
         self.ui.jobTickets.clear()
-        for ticket in ticket_list:
-            pos = self.ui.jobTickets.count() + 1
-            ticket_name = QtGui.QListWidgetItem()
-            ticket_name.setText(ticket.get_name())
-            if ticket.get_cat() == 'Removal':
-                colour = QtGui.QColor(176, 180, 255)
-                ticket_name.setBackgroundColor(colour)
-            elif ticket.get_cat() == 'Work':
-                colour = QtGui.QColor(253, 160, 127)
-                ticket_name.setBackgroundColor(colour)
-            else:
-                colour = QtGui.QColor(172, 209, 158)
-                ticket_name.setBackgroundColor(colour)
-            self.ui.jobTickets.insertItem(pos, ticket_name)
-        # Select last ticket added
-        if len(ticket_list) == 1:
-            self.ui.jobTickets.setCurrentItem(ticket_name)
-            self.ui.jobTickets.setItemSelected(ticket_name, True)
+        if ticket_list:
+            for ticket in ticket_list:
+                pos = self.ui.jobTickets.count() + 1
+                ticket_name = QtGui.QListWidgetItem()
+                ticket_name.setText(ticket.get_name())
+                if ticket.get_cat() == 'Removal':
+                    colour = QtGui.QColor(176, 180, 255)
+                    ticket_name.setBackgroundColor(colour)
+                elif ticket.get_cat() == 'Work':
+                    colour = QtGui.QColor(253, 160, 127)
+                    ticket_name.setBackgroundColor(colour)
+                else:
+                    colour = QtGui.QColor(172, 209, 158)
+                    ticket_name.setBackgroundColor(colour)
+                self.ui.jobTickets.insertItem(pos, ticket_name)
+            sel = self.ui.jobTickets.item(0)
+            self.ui.jobTickets.setCurrentItem(sel)
             self.ui.jobTickets.select_ticket()
-        if len(ticket_list) > 1:
-            self.ui.jobTickets.setCurrentItem(ticket_name)
-            self.ui.jobTickets.setItemSelected(ticket_name, True)
-            self.ui.jobTickets.select_ticket()
+            self.explorer.refresh_today()
+
+    def set_job(self, job):
+        current_ticket = self.get_ticket()
+        current_ticket.set_job(job)
+
+    def display_job(self):
+        current_ticket = self.get_ticket()
+        job = current_ticket.get_job()
+        self.ui.job_name_box.setText(job)
 
     def load_tracks(self):
         """Loads previously saved tracks into mapView"""
@@ -322,7 +365,8 @@ class MainWindow(QtGui.QMainWindow):
             track_seg = self.track_segment(item[0], item[1], item[2])
             self.ui.mapView.add_segment(track_seg[0], track_seg[1])
 
-# GPS Tracks ##############################################
+        # GPS Tracks ##############################################
+
     def track_segment(self, start, end, col=None):
         """Selects the trackpoints between the specified times"""
         leg_points = []
@@ -338,7 +382,7 @@ class MainWindow(QtGui.QMainWindow):
         return leg_points, colour
 
     def colour_cells(self, colour):
-        row = self.trackModel.rowCount() -1
+        row = self.trackModel.rowCount() - 1
         col = QtGui.QColor()
         col.setNamedColor(colour)
         col.setAlpha(127)
@@ -356,37 +400,11 @@ class MainWindow(QtGui.QMainWindow):
             aft_lat = item[1].get_lat()
             aft_lon = item[1].get_lon()
             d = gpsAnalyser.find_posn([bef_lat, bef_lon, aft_lat, aft_lon, 1])
-            #print(d[3])
+            # print(d[3])
             total += d[3]
         return total
 
-# Time ###################################################
-    def start_timer(self):
-        # TODO lock this to today's date and ensure warning on closing
-        # TODO add timer to Dia
-        self.timer.timer_start()
-        self.ui.button_start_pause.clicked.disconnect(self.start_timer)
-        self.ui.button_start_pause.clicked.connect(self.pause_timer)
-        self.ui.button_start_pause.setText('Pause')
-        self.ui.button_apply.setEnabled(False)
-
-    def pause_timer(self):
-        time = self.timer.timer_pause()
-        self.ui.time_total.setText(time)
-        self.ui.button_start_pause.clicked.disconnect(self.pause_timer)
-        self.ui.button_start_pause.clicked.connect(self.start_timer)
-        self.ui.button_start_pause.setText('Start')
-        self.ui.button_apply.setEnabled(True)
-
-    def apply_timer(self):
-        return
-
-    def clear_timer(self):
-        self.timer.timer_clear()
-        self.ui.time_running.setText('')
-        self.ui.time_total.setText('')
-
-# Save and close ####################################################
+    # Save and close ####################################################
 
     def save(self):
         dataIO = DataIO(self)
@@ -395,9 +413,22 @@ class MainWindow(QtGui.QMainWindow):
 
     def closeEvent(self, event):
         """On closing application window"""
-        if self.dirty:
-            reply = QtGui.QMessageBox.question(self, "UnSaved Data", "Save ?", \
+        if self.explorer.timer_dirty:
+            reply = QtGui.QMessageBox.question(self, "Timer Running", "Timer Running: Open ?",
                                                QtGui.QMessageBox.Yes | QtGui.QMessageBox.No | QtGui.QMessageBox.Cancel)
+            if reply == QtGui.QMessageBox.Cancel:
+                event.ignore()
+            elif reply == QtGui.QMessageBox.Yes:
+                self.explorer.show()
+                event.ignore()
+            elif reply == QtGui.QMessageBox.No:
+                if self.dirty:
+                    event.ignore()
+                else:
+                    pass
+        elif self.dirty:
+            reply = QtGui.QMessageBox.question(self, "UnSaved Data", "Save ?",
+                    QtGui.QMessageBox.Yes | QtGui.QMessageBox.No | QtGui.QMessageBox.Cancel)
             if reply == QtGui.QMessageBox.Cancel:
                 event.ignore()
             elif reply == QtGui.QMessageBox.Yes:

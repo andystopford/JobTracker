@@ -8,6 +8,7 @@ from TicketNotes import*
 from TrackTable import*
 from HoursTable import*
 from ExpensesTable import*
+from PaymentTable import*
 from JobTickets import*
 
 try:
@@ -47,10 +48,7 @@ class Ui_mainWindow(object):
         self.button_add_ticket = QtGui.QPushButton("Add Ticket")
         self.menu_tickets = QtGui.QMenu()
         self.button_add_ticket.setMenu(self.menu_tickets)
-        self.time_running = QtGui.QTextEdit()
-        self.time_total = QtGui.QTextEdit()
-        self.button_start_pause = QtGui.QPushButton("Start")
-        self.button_apply = QtGui.QPushButton("Apply")
+        self.job_name_box = QtGui.QLineEdit()
 
     def setup_ui(self, parent_window):
         central_widget = QtGui.QWidget(parent_window)
@@ -63,6 +61,7 @@ class Ui_mainWindow(object):
         self.trackTable = TrackTable(parent_window)
         self.hoursTable = HoursTable(parent_window)
         self.expensesTable = ExpensesTable(parent_window)
+        self.paymentTable = PaymentTable(parent_window)
         # Widget settings
         self.yearView.setMinimumHeight(320)
         self.filter_box.setInsertPolicy(6)
@@ -73,19 +72,29 @@ class Ui_mainWindow(object):
         self.from_display.setMaximumHeight(30)
         self.time_display.setMaximumHeight(30)
         self.to_display.setMaximumHeight(30)
-        self.time_running.setMaximumHeight(30)
-        self.time_total.setMaximumHeight(30)
         tt_horiz_header = self.trackTable.horizontalHeader()
         tt_horiz_header.setResizeMode(QtGui.QHeaderView.Stretch)
         ht_horiz_header = self.hoursTable.horizontalHeader()
         ht_horiz_header.setResizeMode(QtGui.QHeaderView.Stretch)
+        #self.job_name_box.setMaximumHeight(30)
+        self.job_name_box.setPlaceholderText('Job Name')
         self.hoursTable.setColumnCount(5)
         self.hoursTable.setRowCount(5)
-        self.hoursTable.setHorizontalHeaderLabels(['Start', 'End', 'Hours', 'Miles', 'Notes'])
+        self.hoursTable.setMaximumWidth(550)
+        self.hoursTable.setHorizontalHeaderLabels(['Start', 'End', 'Hours',
+                                                   'Miles', 'Notes'])
         et_horiz_header = self.expensesTable.horizontalHeader()
         et_horiz_header.setResizeMode(QtGui.QHeaderView.Stretch)
         self.expensesTable.setColumnCount(2)
         self.expensesTable.setHorizontalHeaderLabels(['Item', 'Cost'])
+        self.paymentTable.setColumnCount(2)
+        self.paymentTable.setRowCount(1)
+        self.paymentTable.setMaximumHeight(60)
+        pt_horiz_header = self.paymentTable.horizontalHeader()
+        pt_horiz_header.setResizeMode(QtGui.QHeaderView.Stretch)
+        pt_vert_header = self.paymentTable.verticalHeader()
+        pt_vert_header.setResizeMode(QtGui.QHeaderView.Stretch)
+        pt_vert_header.hide()
 
         # Labels
         label_dayView = QtGui.QLabel('Job Tickets')
@@ -167,25 +176,27 @@ class Ui_mainWindow(object):
         job_ctrl_splitter.addWidget(ticket_ctrl_splitter)
         notes_splitter = QtGui.QSplitter()
 
-        #ticket_ctrl_splitter.addWidget(self.ticketNotes)
-        ticket_ctrl_splitter.addWidget(notes_splitter)
+        ticket_ctrl_splitter.addWidget(self.job_name_box)
+        ticket_ctrl_splitter.addWidget(self.ticketNotes)
+        #ticket_ctrl_splitter.addWidget(notes_splitter)
         ticket_ctrl_splitter.addWidget(self.hoursTable)
         ticket_ctrl_splitter.addWidget(self.expensesTable)
-
-        notes_splitter.addWidget(self.ticketNotes)
-        timer_container = QtGui.QWidget()
-        timer_container.setMaximumWidth(150)
-        notes_splitter.addWidget(timer_container)
-        timer_layout = QtGui.QGridLayout()
-        timer_container.setLayout(timer_layout)
-        timer_packer1 = QtGui.QWidget()
-        timer_packer2 = QtGui.QWidget()
-        timer_layout.addWidget(timer_packer1, 0, 0, align)
-        timer_layout.addWidget(timer_packer2, 0, 1, align)
-        timer_layout.addWidget(self.time_running, 1, 0, align)
-        timer_layout.addWidget(self.time_total, 1, 1, align)
-        timer_layout.addWidget(self.button_start_pause, 2, 0, align)
-        timer_layout.addWidget(self.button_apply, 2, 1, align)
+        ticket_ctrl_splitter.addWidget(self.paymentTable)
+        #notes_splitter.addWidget(self.job_name_box)
+        #notes_splitter.addWidget(self.ticketNotes)
+        #timer_container = QtGui.QWidget()
+        #timer_container.setMaximumWidth(150)
+        #notes_splitter.addWidget(timer_container)
+        #timer_layout = QtGui.QGridLayout()
+        #timer_container.setLayout(timer_layout)
+        #timer_packer1 = QtGui.QWidget()
+        #timer_packer2 = QtGui.QWidget()
+        #timer_layout.addWidget(timer_packer1, 0, 0, align)
+        #timer_layout.addWidget(timer_packer2, 0, 1, align)
+        #timer_layout.addWidget(self.time_running, 1, 0, align)
+        #timer_layout.addWidget(self.time_total, 1, 1, align)
+        #timer_layout.addWidget(self.button_start_pause, 2, 0, align)
+        #timer_layout.addWidget(self.button_apply, 2, 1, align)
 
         ###################################################
         # Map group

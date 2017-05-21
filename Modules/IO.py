@@ -62,10 +62,13 @@ class DataIO:
                     for tkt in date:
                         name = tkt.text
                         cat = tkt[0].text
-                        notes = tkt[1].text
-                        tracks = tkt[2]
+                        # Comment out the following for first use:
+                        job = tkt[1].text
+                        notes = tkt[2].text
+                        tracks = tkt[3]
                         ticket = model.add_ticket(row, col, cat)
                         ticket.set_name(name)
+                        ticket.set_job(job)
                         ticket.set_notes(notes)
                         for trk in tracks:
                             start = trk.get('start')
@@ -79,12 +82,16 @@ class DataIO:
                             brush = QtGui.QBrush(colour)
                             track = Track(start, end, hours, miles, trk_notes, brush)
                             ticket.add_track(track)
-                        expenses = tkt[3]
+                        expenses = tkt[4]
                         for exp in expenses:
                             item = exp.get('item')
                             cost = exp.get('cost')
                             expense = [item, cost]
                             ticket.add_expense(expense)
+                        payment = tkt[5]
+                        amnt = payment.get('Amount')
+                        pmnt = payment.get('payment')
+                        ticket.set_payment([pmnt, amnt])
         except:
             print('User not found')
         self.parent.clear_year()
@@ -111,21 +118,27 @@ class DataIO:
                             for tkt in tkt_list:
                                 name = tkt.get_name()
                                 cat = tkt.get_cat()
+                                job = tkt.get_job()
                                 notes = tkt.get_notes()
                                 track_list = tkt.get_tracks()
                                 expenses_list = tkt.get_expenses()
+                                payment = tkt.get_payment()
                                 # Set ET sub-elements
                                 tkt_name = ET.SubElement(tkt_date, "Name")
                                 tkt_cat = ET.SubElement(tkt_name, 'Cat')
+                                tkt_job = ET.SubElement(tkt_name, 'Job')
                                 tkt_notes = ET.SubElement(tkt_name, 'Notes')
                                 tkt_tracks = ET.SubElement(tkt_name, 'Tracks')
                                 tkt_expenses = ET.SubElement(tkt_name, 'Expenses')
+                                tkt_payment = ET.SubElement(tkt_name, 'Payment')
                                 tkt_date.set('row', str(row))
                                 tkt_date.set('col', str(col))
                                 tkt_date.set('date', date)
                                 tkt_name.text = name
                                 tkt_cat.text = cat
                                 tkt_notes.text = notes
+                                tkt_payment.set('payment', payment[0])
+                                tkt_payment.set('Amount', payment[1])
                                 for i, track in enumerate(track_list):
                                     trk = ET.SubElement(tkt_tracks, ('Track' + str(i)))
                                     trk.set('start', track.get_start())
@@ -139,6 +152,7 @@ class DataIO:
                                     exp = ET.SubElement(tkt_expenses, ('Expense' + str(i)))
                                     exp.set('item', expense[0])
                                     exp.set('cost', expense[1])
+                                tkt_job.text = job
         path = self.user_path
         try:
             os.remove("{0}BAK_years.xml".format(path))

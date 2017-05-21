@@ -12,12 +12,14 @@ class JobTickets(QtGui.QListWidget):
         self.itemDoubleClicked.connect(self.rename_ticket)
 
     def select_ticket(self):
-        """By clicking item"""
+        """By clicking item or from JT.display_tickets()"""
         self.parent.ui.ticketNotes.load_text()
         self.parent.ui.hoursTable.fill_table()
         self.parent.ui.expensesTable.fill_table()
+        self.parent.ui.paymentTable.fill_table()
         self.parent.load_tracks()
         self.parent.enable_day()
+        self.parent.display_job()
 
     def rename_ticket(self, item):
         """If lamda is not used, self.ticket_changed(item_name) will be immediately
@@ -53,6 +55,7 @@ class JobTickets(QtGui.QListWidget):
         day = self.parent.get_day()
         model = day[0]
         model.delete_ticket(day[1], day[2], row_index)
+        self.parent.explorer.refresh_today()
         self.parent.dirty = True
 
 

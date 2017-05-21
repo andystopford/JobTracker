@@ -3,26 +3,46 @@ from operator import methodcaller
 class Ticket:
     def __init__(self):
         """Contains  notes, times, expenses for a ticketed job or event"""
+        self.date = ''
         self.name = ''
         self.tkt_cat = ''
         self.track_list = []
         self.hours_list = []
         self.expenses_list = []
+        self.payment = ['', '']
         self.notes = None
+        self.job_name = None
+
+    def set_date(self, date):
+        """The ticket's date"""
+        self.date = date
 
     def set_name(self, name):
+        """User selected name for ticket"""
         self.name = name
 
     def set_cat(self, tkt_cat):
+        """Removals, Work or Other"""
         self.tkt_cat = tkt_cat
 
+    def set_job(self, job_name):
+        """A name to group tickets under"""
+        self.job_name = job_name
+
     def set_notes(self, notes):
+        """User entered notes"""
         self.notes = notes
 
     def add_expense(self, expense):
+        """Itemised expenses"""
         self.expenses_list.append(expense)
 
+    def set_payment(self, payment):
+        """Payments"""
+        self.payment = payment
+
     def add_track(self, track):
+        """A user-marked GPS track"""
         self.track_list.append(track)
         self.sort()
 
@@ -31,11 +51,17 @@ class Ticket:
         self.sort()
         return
 
+    def get_date(self):
+        return self.date
+
     def get_name(self):
         return self.name
 
     def get_cat(self):
         return self.tkt_cat
+
+    def get_job(self):
+        return self.job_name
 
     def get_tracks(self):
         return self.track_list
@@ -49,6 +75,9 @@ class Ticket:
 
     def get_expenses(self):
         return self.expenses_list
+
+    def get_payment(self):
+        return self.payment
 
 
 class Track:

@@ -20,7 +20,7 @@ class HoursTable(QtGui.QTableWidget):
         menu.addAction(add)
         menu.addAction(delete)
         menu.popup(QtGui.QCursor.pos())
-        add.triggered.connect(self.add_track)
+        add.triggered.connect(lambda: self.add_track('00:00', ''))
         delete.triggered.connect(self.delete_track)
 
     def reset(self):
@@ -32,7 +32,7 @@ class HoursTable(QtGui.QTableWidget):
         trk = []   # list of times and distance
         if data.hasFormat('application/x-qabstractitemmodeldatalist'):
             byte_array = data.data('application/x-qabstractitemmodeldatalist')
-            ticket = self.get_ticket()
+            ticket = self.parent.get_ticket()
             src_row = self.decode_data(byte_array)
             for i in range(0, 4):
                 index = QtGui.QStandardItemModel.index(src_model, src_row, i)
@@ -51,21 +51,11 @@ class HoursTable(QtGui.QTableWidget):
         row = ds.readInt32()  # gives correct row/col numbers
         return row
 
-    def get_ticket(self):
-        day = self.parent.get_day()
-        tkt_name = self.parent.ui.jobTickets.currentItem()
-        if not tkt_name:
-            print('no ticket selected')
-            return
-        tkt_name = tkt_name.text()
-        ticket = day[0].get_ticket(day[1], day[2], tkt_name)
-        return ticket
-
     def fill_table(self):
         """Gets tracks for current ticket and fills table"""
         self.clear()
         self.reset()
-        ticket = self.get_ticket()
+        ticket = self.parent.get_ticket()
         if ticket:
             track_list = ticket.get_tracks()
             row = 0
@@ -91,18 +81,18 @@ class HoursTable(QtGui.QTableWidget):
         self.total()
         return
 
-    def add_track(self):
+    def add_track(self, time, notes):
         colour = QtGui.QColor(195, 218, 255)
         brush = QtGui.QBrush(colour)
-        ticket = self.get_ticket()
-        track = Track('', '', '00:00', '0', '', brush)
+        ticket = self.parent.get_ticket()
+        track = Track('', '', time, '0', notes, brush)
         ticket.add_track(track)
         self.clear()
         self.fill_table()
         self.parent.dirty = True
 
     def delete_track(self):
-        ticket = self.get_ticket()
+        ticket = self.parent.get_ticket()
         row = int(self.currentRow())
         ticket.delete_track(row)
         self.clear()
@@ -113,7 +103,7 @@ class HoursTable(QtGui.QTableWidget):
         """Updates the current ticket with manually entered values and
         re-draws the table"""
         tc = TimeConverter()
-        ticket = self.get_ticket()
+        ticket = self.parent.get_ticket()
         track_list = ticket.get_tracks()
         for t, track in enumerate(track_list):
             new = []
@@ -156,7 +146,7 @@ class HoursTable(QtGui.QTableWidget):
         """Makes list of saved tracks to re-display in mapView"""
         tc = TimeConverter()
         tracks = []
-        ticket = self.get_ticket()
+        ticket = self.parent.get_ticket()
         track_list = ticket.get_tracks()
         for t, track in enumerate(track_list):
             start = track.get_start()

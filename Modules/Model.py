@@ -15,6 +15,7 @@ class Model(QtGui.QStandardItemModel):
         self.setRowCount(12)
         self.setColumnCount(37)
         self.name_search_list = []
+        self.jobs_search_list = []
         self.notes_search_list = []
         self.setup()
 
@@ -90,11 +91,14 @@ class Model(QtGui.QStandardItemModel):
             for item in self.name_search_list:
                 colour = QtGui.QColor(255, 0, 0)
                 item.setBackground(colour)
-        if len(self.notes_search_list) > 0:
-            for item in self.notes_search_list:
+        if len(self.jobs_search_list) > 0:
+            for item in self.jobs_search_list:
                 colour = QtGui.QColor(0, 255, 0)
                 item.setBackground(colour)
-
+        if len(self.notes_search_list) > 0:
+            for item in self.notes_search_list:
+                colour = QtGui.QColor(0, 0, 255)
+                item.setBackground(colour)
         self.mark_today(year_instance)
         # return to JT setup_year()
         return date_list
@@ -110,7 +114,7 @@ class Model(QtGui.QStandardItemModel):
         return colour
 
     def mark_today(self, year_instance):
-        """Outline today"""
+        """Outline today and select it"""
         date = time.strftime("%d/%m/%Y")
         if int(date[6:10]) == year_instance.year:
             day = int(date[0:2])
@@ -128,11 +132,19 @@ class Model(QtGui.QStandardItemModel):
         tickets = day_item.child(0, 1)
         ticket_list = tickets.data()
         name = cat  # + ' ' + str(len(ticket_list) + 1)
+        date = self.get_date(row, col)
+        ticket.set_date(date)
         ticket.set_name(name)
         ticket.set_cat(cat)
         ticket_list.append(ticket)
         tickets.setData(ticket_list)
         return ticket
+
+    def get_date(self, row, col):
+        day = self.item(row, col)
+        date = day.child(0, 0).data()  # QDate, e.g. (2016, 7, 15)
+        date = date.toString()
+        return date
 
     def delete_ticket(self, row, col, index):
         """From RClick menu in jobTickets QListWidget"""

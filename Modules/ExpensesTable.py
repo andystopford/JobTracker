@@ -19,7 +19,7 @@ class ExpensesTable(QtGui.QTableWidget):
 
     def delete_entry(self):
         row = int(self.currentRow())
-        ticket = self.get_ticket()
+        ticket = self.parent.get_ticket()
         exp = ticket.expenses_list[row]
         ticket.expenses_list.remove(exp)
         self.removeRow(row)
@@ -30,20 +30,10 @@ class ExpensesTable(QtGui.QTableWidget):
     def reset(self):
         self.setHorizontalHeaderLabels(['Item', 'Cost'])
 
-    def get_ticket(self):
-        day = self.parent.get_day()
-        tkt_name = self.parent.ui.jobTickets.currentItem()
-        if not tkt_name:
-            print('no ticket selected')
-            return
-        tkt_name = tkt_name.text()
-        ticket = day[0].get_ticket(day[1], day[2], tkt_name)
-        return ticket
-
     def fill_table(self):
         self.clear()
         self.reset()
-        ticket = self.get_ticket()
+        ticket = self.parent.get_ticket()
         if ticket:
             exp_list = ticket.get_expenses()
             self.setRowCount(len(exp_list) + 1)
@@ -55,7 +45,7 @@ class ExpensesTable(QtGui.QTableWidget):
             self.total(exp_list)
 
     def update(self):
-        ticket = self.get_ticket()
+        ticket = self.parent.get_ticket()
         ticket.expenses_list = []
         for row in range(self.rowCount() - 1):
             exp_item = []

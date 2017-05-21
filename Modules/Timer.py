@@ -27,8 +27,8 @@ class Timer:
         self.qTimer.stop()
         self.total_time += elapsed
         # divide by sixty to get minutes - comment out for testing
-        # minutes = int(self.total_time/60)
-        minutes = self.total_time
+        minutes = int(self.total_time/60)
+        # minutes = self.total_time
         disp_time = TimeConverter.get_time_hrs_mins(self, minutes)
         return disp_time
 

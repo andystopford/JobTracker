@@ -1,6 +1,6 @@
 
-import itertools
 import calendar
+import itertools
 
 
 class Year:
@@ -27,6 +27,7 @@ class Year:
         merged = list(itertools.chain.from_iterable(days))
         col = merged.index(day)
         return col
+
 
 
 
