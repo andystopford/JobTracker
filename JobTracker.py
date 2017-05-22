@@ -10,7 +10,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, see <http://www.gnu.org/licenses/>.
 #
-# JobTracker version 2.1  21/05/17
+# JobTracker version 2.1.1  22/05/17
 #######################################################################
 import sys
 sys.path.append("./Modules")
@@ -37,7 +37,7 @@ class MainWindow(QtGui.QMainWindow):
         QtGui.QWidget.__init__(self, parent)
         self.ui = Ui_mainWindow()
         self.ui.setup_ui(self)
-        self.setWindowTitle("JobTracker 2.0")
+        self.setWindowTitle("JobTracker 2.1")
         self.setWindowIcon(QtGui.QIcon('./Icons/shackles.png'))
         # self.setStyleSheet(qdarkstyle.load_stylesheet(pyside=False))
 

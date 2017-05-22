@@ -41,6 +41,7 @@ class Explorer(QtGui.QMainWindow):
         self.ui.costs_table.itemClicked.connect(self.handle_clicked)
         self.ui.button_start_pause.clicked.connect(self.start_timer)
         self.ui.button_apply.clicked.connect(self.apply_timer)
+        self.ui.button_clear.clicked.connect(self.clear_timer)
         self.ui.ticket_list.itemClicked.connect(self.tkt_selected)
 
         self.ticket_list = []
@@ -78,7 +79,7 @@ class Explorer(QtGui.QMainWindow):
         notes_words = []
         model = self.parent.model
         name_search = str(self.ui.name_search_box.toPlainText())
-        jobs_search = str(self.ui.jobs_search_box.text())
+        jobs_search = str(self.ui.jobs_search_box.toPlainText())
         notes_search = str(self.ui.notes_search_box.toPlainText())
         for item in name_search.split():
             names_words.append(item)
@@ -180,7 +181,7 @@ class Explorer(QtGui.QMainWindow):
             exp_list = ticket.get_expenses()
             paid = ticket.get_payment()
             paid = paid[1]
-            if paid is not " ":
+            if paid:    # TODO Bug here?
                 paid = float(paid)
                 job_payment += paid
                 paid = '{0:.2f}'.format(paid)
@@ -295,6 +296,7 @@ class Explorer(QtGui.QMainWindow):
         self.ui.progress_bar.setRange(0, 1)
         self.ui.progress_bar.hide()
         self.ui.button_apply.setEnabled(True)
+        self.ui.button_clear.setEnabled(True)
 
     def tab_changed(self, e):
         if e == 2:
@@ -341,14 +343,13 @@ class Explorer(QtGui.QMainWindow):
             tot_time = self.ui.time_total.toPlainText()
             self.tkt_add_track(self.timer_tkt, tot_time, notes)
             self.clear_timer()
-            self.ui.button_apply.setEnabled(False)
-            self.timer_dirty = False
+
             self.ui.timer_warning.clear()
         else:
             self.timer_warning()
 
     def timer_warning(self):
-        warning = 'Warning: No Ticket Selected'
+        warning = 'Warning: No ticket set/selected for today'
         self.ui.timer_warning.setText(warning)
         self.ui.timer_warning.setStyleSheet('color: red')
 
@@ -364,6 +365,10 @@ class Explorer(QtGui.QMainWindow):
         self.timer.timer_clear()
         self.ui.time_running.setText('')
         self.ui.time_total.clear()
+        self.ui.timer_warning.clear()
+        self.timer_dirty = False
+        self.ui.button_apply.setEnabled(False)
+        self.ui.button_clear.setEnabled(False)
 
 
 ###############################################################################

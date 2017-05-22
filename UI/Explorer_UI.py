@@ -38,7 +38,9 @@ class Explorer_Ui(object):
         self.time_notes.setPlaceholderText("Notes")
         self.button_start_pause = QtGui.QPushButton("Start")
         self.button_apply = QtGui.QPushButton("Apply")
+        self.button_clear = QtGui.QPushButton("Clear")
         self.button_apply.setEnabled(False)
+        self.button_clear.setEnabled(False)
         self.timer_warning = QtGui.QLabel()
         self.progress_bar = QtGui.QProgressBar()
         self.progress_bar.setRange(0, 1)
@@ -110,7 +112,6 @@ class Explorer_Ui(object):
         timer_horiz_layout.addLayout(timer_layout)
         timer_horiz_layout.addWidget(self.ticket_list)
 
-        timer_layout.addWidget(self.time_notes)
         timer_layout.addLayout(timer_grid)
         timer_layout.addWidget(self.timer_warning)
         self.timer_warning.setAlignment(QtCore.Qt.AlignRight)
@@ -120,8 +121,10 @@ class Explorer_Ui(object):
 
         timer_grid.addWidget(self.time_running, 0, 0, align)
         timer_grid.addWidget(self.time_total, 0, 1, align)
+        timer_grid.addWidget(self.time_notes, 0, 2, align)
         timer_grid.addWidget(self.button_start_pause, 1, 0, align)
         timer_grid.addWidget(self.button_apply, 1, 1, align)
+        timer_grid.addWidget(self.button_clear, 1, 2, align)
 
         self.tabWidget.addTab(filters_widget, 'Filter')
         self.tabWidget.addTab(job_widget, 'Jobs')
