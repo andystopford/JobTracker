@@ -11,7 +11,9 @@ class HoursTable(QtGui.QTableWidget):
         self.setDragDropMode(QtGui.QAbstractItemView.DropOnly)
         self.parent = parent
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-        self.connect(self, QtCore.SIGNAL("customContextMenuRequested(QPoint)"), self.rclick_menu)
+        self.connect(self, QtCore.SIGNAL("customContextMenuRequested"
+                                         "(QPoint)"), self.rclick_menu)
+        self.setSelectionMode(QtGui.QAbstractItemView.NoSelection)
 
     def rclick_menu(self):
         menu = QtGui.QMenu(self)
@@ -23,10 +25,9 @@ class HoursTable(QtGui.QTableWidget):
         add.triggered.connect(lambda: self.add_track('00:00', ''))
         delete.triggered.connect(self.delete_track)
 
-    def reset(self):
-        self.setHorizontalHeaderLabels(['Start', 'End', 'Hours', 'Miles', 'Notes'])
-
     def dropEvent(self, event):
+        """Handle drop event from TrackTable. Add dropped data to current
+        ticket"""
         src_model = event.source().parent.trackModel
         data = event.mimeData()
         trk = []   # list of times and distance
@@ -46,42 +47,47 @@ class HoursTable(QtGui.QTableWidget):
         self.parent.enable_day()    # reqd to re-enable ticketNotes
 
     def decode_data(self, byte_array):
-        """Data from drop event"""
+        """Decode data from drop event"""
         ds = QtCore.QDataStream(byte_array)
         row = ds.readInt32()  # gives correct row/col numbers
         return row
 
     def fill_table(self):
-        """Gets tracks for current ticket and fills table"""
-        self.clear()
-        self.reset()
+        """Get tracks for current ticket and fill table"""
         ticket = self.parent.get_ticket()
         if ticket:
             track_list = ticket.get_tracks()
             row = 0
             self.setRowCount(len(track_list) + 1)
+            text_colour = QtGui.QColor('#1d1e1f')
             for track in track_list:
                 brush = track.get_brush()
                 start = QtGui.QTableWidgetItem(track.get_start())
                 start.setBackground(brush)
+                start.setTextColor(text_colour)
                 self.setItem(row, 0, start)
                 end = QtGui.QTableWidgetItem(track.get_end())
                 end.setBackground(brush)
+                end.setTextColor(text_colour)
                 self.setItem(row, 1, end)
                 hours = QtGui.QTableWidgetItem(track.get_hours())
                 hours.setBackground(brush)
+                hours.setTextColor(text_colour)
                 self.setItem(row, 2, hours)
                 miles = QtGui.QTableWidgetItem(track.get_miles())
                 miles.setBackground(brush)
+                miles.setTextColor(text_colour)
                 self.setItem(row, 3, miles)
                 notes = QtGui.QTableWidgetItem(track.get_notes())
                 notes.setBackground(brush)
+                notes.setTextColor(text_colour)
                 self.setItem(row, 4, notes)
                 row += 1
         self.total()
         return
 
     def add_track(self, time, notes):
+        """Add new track after R- click event"""
         colour = QtGui.QColor(195, 218, 255)
         brush = QtGui.QBrush(colour)
         ticket = self.parent.get_ticket()
@@ -92,6 +98,7 @@ class HoursTable(QtGui.QTableWidget):
         self.parent.dirty = True
 
     def delete_track(self):
+        """Delete track after R- click event"""
         ticket = self.parent.get_ticket()
         row = int(self.currentRow())
         ticket.delete_track(row)
@@ -100,8 +107,8 @@ class HoursTable(QtGui.QTableWidget):
         self.parent.dirty = True
 
     def update_tracks(self):
-        """Updates the current ticket with manually entered values and
-        re-draws the table"""
+        """Update the current ticket with manually entered values and
+        re-draw the table"""
         tc = TimeConverter()
         ticket = self.parent.get_ticket()
         track_list = ticket.get_tracks()
@@ -119,12 +126,14 @@ class HoursTable(QtGui.QTableWidget):
         self.total()
 
     def total(self):
+        """Add up hours and miles and display total"""
         row_count = self.rowCount()
         tc = TimeConverter()
         total_hrs = 0
         total_miles = 0
         colour = QtGui.QColor(165, 151, 255)
         brush = QtGui.QBrush(colour)
+        text_colour = QtGui.QColor('#1d1e1f')
         for i in range(0, row_count - 1):
             hrs = self.item(i, 2).text()
             hrs = tc.get_time_mins(hrs)
@@ -133,17 +142,20 @@ class HoursTable(QtGui.QTableWidget):
         total_hours = QtGui.QTableWidgetItem()
         total_hours.setText(total_hrs)
         total_hours.setBackground(brush)
+        total_hours.setTextColor(text_colour)
         self.setItem(row_count - 1, 2, total_hours)
         for i in range(0, row_count - 1):
             miles = float(self.item(i, 3).text())
             total_miles += miles
+        total_miles = '{0:.2f}'.format(total_miles)
         total_dist = QtGui.QTableWidgetItem()
         total_dist.setText(str(total_miles))
         total_dist.setBackground(brush)
+        total_dist.setTextColor(text_colour)
         self.setItem(row_count - 1, 3, total_dist)
 
     def load_tracks(self):
-        """Makes list of saved tracks to re-display in mapView"""
+        """Make list of saved tracks to re-display in mapView"""
         tc = TimeConverter()
         tracks = []
         ticket = self.parent.get_ticket()

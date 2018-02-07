@@ -8,7 +8,9 @@ class ExpensesTable(QtGui.QTableWidget):
         self.parent = parent
         self.setRowCount(2)
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-        self.connect(self, QtCore.SIGNAL("customContextMenuRequested(QPoint)"), self.rclick_menu)
+        self.connect(self, QtCore.SIGNAL("customContextMenuRequested"
+                                         "(QPoint)"), self.rclick_menu)
+        self.setSelectionMode(QtGui.QAbstractItemView.NoSelection)
 
     def rclick_menu(self):
         menu = QtGui.QMenu(self)
@@ -27,12 +29,7 @@ class ExpensesTable(QtGui.QTableWidget):
         self.total(ticket.expenses_list)
         self.parent.dirty = True
 
-    def reset(self):
-        self.setHorizontalHeaderLabels(['Item', 'Cost'])
-
     def fill_table(self):
-        self.clear()
-        self.reset()
         ticket = self.parent.get_ticket()
         if ticket:
             exp_list = ticket.get_expenses()
@@ -66,12 +63,15 @@ class ExpensesTable(QtGui.QTableWidget):
                 total_cost += float(item[1])
         colour = QtGui.QColor(255, 159, 161)
         brush = QtGui.QBrush(colour)
+        text_colour = QtGui.QColor('#1d1e1f')
         label = QtGui.QTableWidgetItem()
         label.setText('Total')
         label.setBackground(brush)
+        label.setTextColor(text_colour)
         total_cost_item = QtGui.QTableWidgetItem()
         total_cost_item.setText(str(total_cost))
         total_cost_item.setBackground(brush)
+        total_cost_item.setTextColor(text_colour)
         self.setItem(row_count - 1, 0, label)
         self.setItem(row_count - 1, 1, total_cost_item)
         self.insertRow(row_count - 1)

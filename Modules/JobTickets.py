@@ -7,7 +7,8 @@ class JobTickets(QtGui.QListWidget):
         """Displays list of job tickets"""
         self.parent = parent
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-        self.connect(self, QtCore.SIGNAL("customContextMenuRequested(QPoint)"), self.rclick_menu)
+        self.connect(self, QtCore.SIGNAL("customContextMenuRequested(QPoint)"),
+                     self.rclick_menu)
         self.itemActivated.connect(self.select_ticket)
         self.itemDoubleClicked.connect(self.rename_ticket)
 
@@ -22,10 +23,12 @@ class JobTickets(QtGui.QListWidget):
         self.parent.display_job()
 
     def rename_ticket(self, item):
-        """If lamda is not used, self.ticket_changed(item_name) will be immediately
-        evaluated and then the result passed by the connect method. With lambda,
-        the interpreter knows to pass item_name to be evaluated subsequently"""
-        item.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled)
+        """If lamda is not used, self.ticket_changed(item_name) will be
+        immediately evaluated and then the result passed by the connect method.
+        With lambda, the interpreter knows to pass item_name to be evaluated
+        subsequently"""
+        item.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEditable |
+                      QtCore.Qt.ItemIsEnabled)
         item_name = item.text()
         self.itemChanged.connect(lambda: self.tkt_name_changed(item_name))
 

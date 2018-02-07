@@ -5,7 +5,7 @@ import matplotlib.cm as cm
 from PyQt4 import QtCore, QtWebKit
 
 sys.path.append('./Scripts/')
-
+from PostcodesIO import PostcodeIO
 
 class MapView(QtWebKit.QWebView):
     def __init__(self, parent):
@@ -19,10 +19,27 @@ class MapView(QtWebKit.QWebView):
         self.layer_name = 0
         self.colour_index = 0
         self.colormap = cm.autumn
+        self.routing_ctrl_hidden = False
 
     def load_map(self):
+        """Load a map from specified provider"""
         with open('./Scripts/map.js', 'r') as f:
             self.frame.evaluateJavaScript(f.read())
+            self.frame.evaluateJavaScript('add_osm_map();')
+            #self.frame.evaluateJavaScript('nom_router();')
+
+    def osm_map(self):
+        """Load standard OSM vector map"""
+        self.frame.evaluateJavaScript('add_osm_map();')
+
+    def terrain_map(self):
+        """Load Mapbox outdoors-v10"""
+        self.frame.evaluateJavaScript('add_terr_map();')
+
+    def sat_map(self):
+        """Load Mapbox Satellite images"""
+        self.frame.evaluateJavaScript('add_sat();')
+
 
     def clear_map(self):
         """Removes previously drawn tracks and markers"""
@@ -50,7 +67,8 @@ class MapView(QtWebKit.QWebView):
                 lat = str(item.get_lat())
                 lon = str(item.get_lon())
                 place_list.append([lat, lon])
-            self.frame.evaluateJavaScript('add_track({}, {});'.format(place_list, colour))
+            self.frame.evaluateJavaScript('add_track({}, {});'.
+                                          format(place_list, colour))
 
     def draw_waypoints(self, point_list):
         """Adds a marker to distinguish recorded waypoints from
@@ -66,14 +84,17 @@ class MapView(QtWebKit.QWebView):
             colour = self.convert_colour(colour)
             lat = posn[0]
             lon = posn[1]
-            self.frame.evaluateJavaScript('add_waypoint({}, {});'.format([lat, lon], colour))
+            self.frame.evaluateJavaScript('add_waypoint({}, {});'.
+                                          format([lat, lon], colour))
 
     def set_colormap(self, colormap):
+        """Colourmaps for graduated colour in tracks"""
         colormap_list = [cm.autumn, cm.brg, cm.hsv, cm.jet]
         self.colormap = colormap_list[colormap]
 
     def convert_colour(self, colour):
-        colour = '#%02x%02x%02x' % (255 * colour[0], 255 * colour[1], 255 * colour[2])
+        colour = '#%02x%02x%02x' % (255 * colour[0], 255 * colour[1], 255
+                                    * colour[2])
         colour = str(colour)
         colour = ' " ' + colour + ' " '
         return colour
@@ -97,7 +118,7 @@ class MapView(QtWebKit.QWebView):
 
     def add_segment(self, leg_points, col=None):
         place_list = []
-        colour_list = ['#FF4503', '#9F09E8', '#03ACFF', '#1AE809', '#FFC50A']
+        colour_list = ['#fda07f', '#cd82f2', '#7fd4fd', '#8bf282', '#fde083']
         if not col:
             curr_colour = colour_list[self.colour_index]
         else:
@@ -107,7 +128,8 @@ class MapView(QtWebKit.QWebView):
             lat = str(item.get_lat())
             lon = str(item.get_lon())
             place_list.append([lat, lon])
-        self.frame.evaluateJavaScript('add_segment({}, {});'.format(place_list, colour))
+        self.frame.evaluateJavaScript('add_segment({}, {});'.format(place_list,
+                                                                    colour))
         if self.colour_index < 4:
             self.colour_index += 1
         else:
@@ -120,21 +142,49 @@ class MapView(QtWebKit.QWebView):
         block = str(self.parent.time_block)
         time = str('<b>' + 'Block' + ' ' + block + ':' + '</b><br>' + time)
         time = json.dumps(time)  # Convert Python string to JS
-        self.frame.evaluateJavaScript('add_start({}, {}, {})'.format(start_lat, start_lon, time))
+        self.frame.evaluateJavaScript('add_start({}, {}, {})'.
+                                      format(start_lat, start_lon, time))
 
     def draw_end(self, end):
         end_lat = end[0]
         end_lon = end[1]
-        self.frame.evaluateJavaScript('add_end({}, {});'.format(end_lat, end_lon))
+        self.frame.evaluateJavaScript('add_end({}, {});'.
+                                      format(end_lat, end_lon))
+
+    # Routing
+    def route(self):
+        pio = PostcodeIO()
+        postcode_from = self.parent.ui.from_box.text()
+        go_from = pio.get_latlng(postcode_from)
+        postcode_to = self.parent.ui.to_box.text()
+        go_to = pio.get_latlng(postcode_to)
+        self.frame.evaluateJavaScript('route({}, {});'.format(go_from, go_to))
+
+    def toggle_router(self):
+        """Toggle visibility of routing control on map"""
+        if self.routing_ctrl_hidden:
+            self.frame.evaluateJavaScript('show_ctrl();')
+            self.routing_ctrl_hidden = False
+            self.parent.ui.button_rhide.setText("Hide Routing")
+        else:
+            self.frame.evaluateJavaScript('hide_ctrl();')
+            self.routing_ctrl_hidden = True
+            self.parent.ui.button_rhide.setText("Show Routing")
+
+    def clear_route(self):
+        self.frame.evaluateJavaScript('clear_route();')
 
     def test(self):
         test = self.frame.evaluateJavaScript('test();')
         print(test)
 
-    @QtCore.pyqtSlot(float, float)  # required to make Python method available to JS
+    @QtCore.pyqtSlot(float, float)  # required to make Python method
+    # available to JS
     def onMapMove(self, lat, lng):
-        self.parent.ui.coord_display.setText('Lng: {:.5f}, Lat: {:.5f}'.format(lng, lat))
+        self.parent.ui.coord_display.setText('Lng: {:.5f}, Lat: {:.5f}'.
+                                             format(lng, lat))
 
     def panMap(self, lng, lat):
-        self.frame.evaluateJavaScript('map.panTo(L.latLng({}, {}));'.format(lat, lng))
+        self.frame.evaluateJavaScript('map.panTo(L.latLng({}, {}));'.
+                                      format(lat, lng))
 

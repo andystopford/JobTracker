@@ -19,8 +19,8 @@ class YearView(QtGui.QTableView):
         """
         super(YearView, self).setModel(model)
         self.connect(self.selectionModel(),
-                     QtCore.SIGNAL("selectionChanged(QItemSelection, QItemSelection)"),
-                     self.get_selection)
+                     QtCore.SIGNAL("selectionChanged(QItemSelection, "
+                                   "QItemSelection)"), self.get_selection)
 
     def get_selection(self):
         indices = self.selectedIndexes()

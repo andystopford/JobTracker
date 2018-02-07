@@ -21,29 +21,33 @@ class Model(QtGui.QStandardItemModel):
 
     def setup(self):
         """Labels headers and inserts QStandardItems in each cell"""
-        months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+        months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug",
+                  "Sep", "Oct", "Nov", "Dec"]
         self.setVerticalHeaderLabels(months)
         log_dates = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
         log_dates_cycle = cycle(log_dates)
         nth = lambda i, n, d=None: next(islice(i, n, None), d)
         log_date_labels = [nth(log_dates_cycle, 0) for _ in range(37)]
         self.setHorizontalHeaderLabels(log_date_labels)
-        # Colour weekends and weeklog_dates differently and insert QStandardItems in each:
+        # Colour weekends and weeklog_dates differently and
+        # insert QStandardItems in each:
         for row in range(12):
             for col in range(37):
                 if (col % 7) - 6 == 0 or (col % 7) - 5 == 0:
                     # Weekends
                     log_date = QtGui.QStandardItem()
                     self.setItem(row, col, log_date)
-                    self.item(row, col).setBackground(QtGui.QColor('#d3d3d6'))
+                    self.item(row, col).setBackground(QtGui.QColor('#bbbbbe'))
                 else:
                     # weekdays
                     log_date = QtGui.QStandardItem()
                     self.setItem(row, col, log_date)
-                    self.item(row, col).setBackground(QtGui.QColor('#dedee2'))
+                    self.item(row, col).setBackground(QtGui.QColor('#d8d8dc'))
 
     def set_year(self, year, new):
-        """Fills in date numbers and colours any cells with associated job tickets"""
+        """Fills in date numbers and colours any cells with associated
+        job tickets
+        """
         date_list = []
         year_instance = Year(self, year)
         months = year_instance.get_months()
@@ -72,17 +76,20 @@ class Model(QtGui.QStandardItemModel):
                         ticket_list = item.child(0, 1).data()
                         if len(ticket_list) > 0:
                             if ticket_list[0].get_cat() == 'Removal':
-                                if self.parent.explorer.ui.rem_chkBox.isChecked():
+                                if self.parent.explorer.ui.rem_chkBox.\
+                                        isChecked():
                                     colour = QtGui.QColor(176, 180, 255)
                                 else:
                                     colour = self.is_weekday(curr_date)
                             elif ticket_list[0].get_cat() == 'Work':
-                                if self.parent.explorer.ui.wrk_chkBox.isChecked():
+                                if self.parent.explorer.ui.wrk_chkBox.\
+                                        isChecked():
                                     colour = QtGui.QColor(253, 160, 127)
                                 else:
                                     colour = self.is_weekday(curr_date)
                             else:
-                                if self.parent.explorer.ui.othr_chkBox.isChecked():
+                                if self.parent.explorer.ui.othr_chkBox.\
+                                        isChecked():
                                     colour = QtGui.QColor(172, 209, 158)
                                 else:
                                     colour = self.is_weekday(curr_date)

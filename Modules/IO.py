@@ -78,7 +78,7 @@ class DataIO:
                             trk_notes = trk.get('notes')
                             colour = trk.get('colour')
                             colour = QtGui.QColor(colour)
-                            colour.setAlpha(127)
+                            # colour.setAlpha(127)
                             brush = QtGui.QBrush(colour)
                             track = Track(start, end, hours, miles, trk_notes, brush)
                             ticket.add_track(track)

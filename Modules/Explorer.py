@@ -8,6 +8,7 @@ from TimeConverter import *
 from Timer import *
 from Year import *
 from Ticket import Track
+from WaitingSpinner import QtWaitingSpinner
 import time
 
 
@@ -21,8 +22,19 @@ class Explorer(QtGui.QMainWindow):
         self.setWindowTitle("JobTracker Explorer")
         self.parent = parent
         # TODO This path is for testing only!
-        self.user_path = "/home/andy/Projects/Programming/Python/JobTracker2/JobTrackerUser/"
+        self.user_path = "/home/andy/Projects/Programming/Python/JobTracker2" \
+                         "/JobTrackerUser/"
         self.timer = Timer(self)
+        self.spinner = QtWaitingSpinner(self.ui.spinner_widget)
+        self.spinner.setRoundness(70.0)
+        self.spinner.setMinimumTrailOpacity(15.0)
+        self.spinner.setTrailFadePercentage(70.0)
+        self.spinner.setNumberOfLines(18)
+        self.spinner.setLineLength(20)
+        self.spinner.setLineWidth(5)
+        self.spinner.setInnerRadius(20)
+        self.spinner.setRevolutionsPerSecond(1)
+        self.spinner.setColor(QtGui.QColor('#5500ff'))
         # Signals
         self.ui.tabWidget.currentChanged.connect(self.tab_changed)
         self.ui.name_clear_button.clicked.connect(self.clear_names)
@@ -39,6 +51,9 @@ class Explorer(QtGui.QMainWindow):
         self.ui.wrk_chkBox.setChecked(True)
         self.ui.othr_chkBox.setChecked(True)
         self.ui.costs_table.itemClicked.connect(self.handle_clicked)
+        self.ui.costs_table.cellClicked.connect(self.select_day)
+        header = self.ui.costs_table.horizontalHeader()
+        header.sectionClicked.connect(self.check_all)
         self.ui.button_start_pause.clicked.connect(self.start_timer)
         self.ui.button_apply.clicked.connect(self.apply_timer)
         self.ui.button_clear.clicked.connect(self.clear_timer)
@@ -97,7 +112,8 @@ class Explorer(QtGui.QMainWindow):
                             cats = self.check_cat_checked()
                             for cat in cats:
                                 if ticket.get_cat() == cat:
-                                    self.filter_tkt(ticket, names_words, jobs_words,
+                                    self.filter_tkt(ticket, names_words,
+                                                    jobs_words,
                                                     notes_words, day_item)
         self.parent.model.set_year(self.parent.year, False)
         self.display_job()
@@ -112,7 +128,8 @@ class Explorer(QtGui.QMainWindow):
             checked_list.append('Other')
         return checked_list
 
-    def filter_tkt(self, ticket, names_words, jobs_words, notes_words, day_item):
+    def filter_tkt(self, ticket, names_words, jobs_words, notes_words,
+                   day_item):
         # Now filter YearView highlighting
         name = ticket.get_name()
         job = ticket.get_job()
@@ -120,6 +137,7 @@ class Explorer(QtGui.QMainWindow):
         for item in names_words:
             if item.lower() in name.lower():
                 self.parent.model.name_search_list.append(day_item)
+                self.ticket_list.append(ticket)
         for item in jobs_words:
             if job:
                 if item.lower() == job.lower():
@@ -162,7 +180,8 @@ class Explorer(QtGui.QMainWindow):
         costs_table = self.ui.costs_table
         costs_table.clear()
         costs_table.setHorizontalHeaderLabels(['Date', 'Ticket Name', 'Hours',
-                                               'Miles', 'Expenses', 'Payments', 'Select'])
+                                               'Miles', 'Expenses', 'Payments',
+                                               'Select'])
         costs_table.setRowCount(len(self.ticket_list) + 1)
         row = 0
         tc = TimeConverter()
@@ -217,6 +236,7 @@ class Explorer(QtGui.QMainWindow):
             row += 1
         # now display totals
         job_hours = tc.get_time_hrs_mins(job_hours)
+        job_miles = '{0:.2f}'.format(job_miles)
         job_costs = '{0:.2f}'.format(job_costs)
         job_payment = '{0:.2f}'.format(job_payment)
         total_label = QtGui.QTableWidgetItem('Total')
@@ -257,6 +277,8 @@ class Explorer(QtGui.QMainWindow):
                 paid = costs_table.item(i, 5).text()
                 if len(paid) > 1:
                     payments += float(paid)
+        miles = '{0:.2f}'.format(miles)
+        exps = '{0:.2f}'.format(exps)
         payments = '{0:.2f}'.format(payments)
         time = tc.get_time_hrs_mins(hours)
         costs_table.item(rows - 1, 2).setText(str(time))
@@ -272,10 +294,36 @@ class Explorer(QtGui.QMainWindow):
         return chk_box
 
     def handle_clicked(self, item):
-        # if item.checkState() == QtCore.Qt.Checked:
-        #    print('row', item.row())
-        #    print('checkstate', item.checkState())
+        """When a check box is checked/unchecked"""
         self.total_hours()
+
+    def check_all(self, col):
+        """Toggle check boxes"""
+        row_count = self.ui.costs_table.rowCount()
+        for row in range(0, row_count - 1):
+            chk_box = self.ui.costs_table.item(row, col)
+            if chk_box.checkState() == QtCore.Qt.Checked:
+                chk_box.setCheckState(QtCore.Qt.Unchecked)
+            else:
+                chk_box.setCheckState(QtCore.Qt.Checked)
+        self.total_hours()
+
+    def select_day(self, row):
+        """Selecting day in main UI from the list in costs_table"""
+        ticket = self.ticket_list[row]
+        date = ticket.get_date()
+        date = time.strptime(date, "%a %b %d %Y")
+        year = date[0]
+        month = date[1]
+        day = date[2]
+        # Work out the row and column for this date
+        year_instance = Year(self, year)
+        col = year_instance.get_column(month, day)
+        row = month - 1
+        # get the year's model and the day's index from it
+        model = self.parent.model_dict[year]
+        index = model.index(row, col)
+        self.parent.ui.yearView.setCurrentIndex(index)
 
     # Time ###################################################
     def start_timer(self):
@@ -283,9 +331,8 @@ class Explorer(QtGui.QMainWindow):
         self.ui.button_start_pause.clicked.disconnect(self.start_timer)
         self.ui.button_start_pause.clicked.connect(self.pause_timer)
         self.ui.button_start_pause.setText('Pause')
-        self.ui.progress_bar.show()
-        self.ui.progress_bar.setRange(0, 0)
         self.timer_dirty = True
+        self.spinner.start()
 
     def pause_timer(self):
         curr_time = self.timer.timer_pause()
@@ -293,10 +340,9 @@ class Explorer(QtGui.QMainWindow):
         self.ui.button_start_pause.clicked.disconnect(self.pause_timer)
         self.ui.button_start_pause.clicked.connect(self.start_timer)
         self.ui.button_start_pause.setText('Start')
-        self.ui.progress_bar.setRange(0, 1)
-        self.ui.progress_bar.hide()
         self.ui.button_apply.setEnabled(True)
         self.ui.button_clear.setEnabled(True)
+        self.spinner.stop()
 
     def tab_changed(self, e):
         if e == 2:
@@ -324,6 +370,8 @@ class Explorer(QtGui.QMainWindow):
         model = self.parent.model_dict[year]
         todays_tkts = model.get_ticket_list(row, col)
         return todays_tkts
+
+
 
     def tkt_selected(self, e):
         selection = e.text()
@@ -402,7 +450,6 @@ class QColorButton(QtGui.QPushButton):
     def onColorPicker(self):
         '''
         Show color-picker dialog to select color.
-
         Qt will use the native dialog by default.
 
         '''

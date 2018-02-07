@@ -28,8 +28,10 @@ class Explorer_Ui(object):
         self.costs_table.setColumnCount(7)
         self.costs_table.setRowCount(5)
         # self.costs_table.setMaximumWidth(550)
-        self.costs_table.setHorizontalHeaderLabels(['Date', 'Ticket Name', 'Hours',
-                                                    'Miles', 'Expenses', 'Payments', 'Select'])
+        self.costs_table.setHorizontalHeaderLabels(['Date', 'Ticket Name',
+                                                    'Hours',
+                                                    'Miles', 'Expenses',
+                                                    'Payments', 'Select'])
         # Timer
         self.ticket_list = QtGui.QListWidget()
         self.time_running = QtGui.QTextEdit()
@@ -42,14 +44,13 @@ class Explorer_Ui(object):
         self.button_apply.setEnabled(False)
         self.button_clear.setEnabled(False)
         self.timer_warning = QtGui.QLabel()
-        self.progress_bar = QtGui.QProgressBar()
-        self.progress_bar.setRange(0, 1)
+        self.spinner_widget = QtGui.QWidget()
 
         self.tabWidget = QtGui.QTabWidget()
 
     def setup_ui(self, parent_window):
-        central_widget = QtGui.QWidget(parent_window)
-        parent_window.setCentralWidget(central_widget)
+        self.central_widget = QtGui.QWidget(parent_window)
+        parent_window.setCentralWidget(self.central_widget)
         # Labels
         label_cat_filter = QtGui.QLabel('Filter By Ticket Category:')
         label_name_search_box = QtGui.QLabel('Search By Ticket Name:')
@@ -57,7 +58,7 @@ class Explorer_Ui(object):
         label_notes_search_box = QtGui.QLabel('Search In Notes:')
         # Main layout
         box = QtGui.QGridLayout()
-        central_widget.setLayout(box)
+        self.central_widget.setLayout(box)
         box.addWidget(self.tabWidget)
         # Filters tab
         filters_widget = QtGui.QWidget()
@@ -115,8 +116,6 @@ class Explorer_Ui(object):
         timer_layout.addLayout(timer_grid)
         timer_layout.addWidget(self.timer_warning)
         self.timer_warning.setAlignment(QtCore.Qt.AlignRight)
-        timer_layout.addWidget(self.progress_bar)
-        self.progress_bar.hide()
         timer_layout.addStretch()
 
         timer_grid.addWidget(self.time_running, 0, 0, align)
@@ -125,6 +124,9 @@ class Explorer_Ui(object):
         timer_grid.addWidget(self.button_start_pause, 1, 0, align)
         timer_grid.addWidget(self.button_apply, 1, 1, align)
         timer_grid.addWidget(self.button_clear, 1, 2, align)
+
+        self.spinner_widget.setMaximumHeight(100)
+        timer_grid.addWidget(self.spinner_widget, 2, 0)
 
         self.tabWidget.addTab(filters_widget, 'Filter')
         self.tabWidget.addTab(job_widget, 'Jobs')
