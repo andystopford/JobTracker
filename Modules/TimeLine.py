@@ -2,17 +2,24 @@ from TimeConverter import*
 
 class TimeLine:
     def __init__(self, parent):
+        """Don't confuse with time_slider which is a QSlider control.
+        This is for calculating lists of points from the slider settings"""
         self.parent = parent
         self.curr_time = 0
         self.time_list = []
         self.tl_point_list = []
         self.event_count = 0
+        self.time_posn = ()
 
     def set_time_slider(self, point_list):
         """ Sets time_slider range. """
-        start = int(point_list[0].time)
-        end = int(point_list[-1].time)
-        time = end - start
+        start = 0
+        end = 0
+        time = 0
+        if point_list:
+            start = int(point_list[0].time)
+            end = int(point_list[-1].time)
+            time = end - start
         return start, end, time
 
     def get_curr_time(self, time, point_list):
@@ -55,3 +62,6 @@ class TimeLine:
         self.event_count += 1
         # return to JT key_press_event
         return start_time, end_time, hours_done, self.tl_point_list, start, finish
+
+    def set_time_posn(self, lon, lat):
+        self.time_posn = (lon, lat)

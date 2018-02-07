@@ -3,14 +3,14 @@ from PyQt4 import QtCore, QtGui
 
 class YearView(QtGui.QTableView):
     def __init__(self, parent):
+        """The year planner interface"""
         super(YearView, self).__init__(parent)
         self.parent = parent
         horiz_header = self.horizontalHeader()
         horiz_header.setResizeMode(QtGui.QHeaderView.Stretch)
         vert_header = self.verticalHeader()
         vert_header.setResizeMode(QtGui.QHeaderView.Stretch)
-        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-        self.connect(self, QtCore.SIGNAL("customContextMenuRequested(QPoint)"), self.right_click)
+        self.setEditTriggers(QtGui.QAbstractItemView.NoEditTriggers)
 
     def set_selection_model(self, model):
         """
@@ -19,25 +19,18 @@ class YearView(QtGui.QTableView):
         """
         super(YearView, self).setModel(model)
         self.connect(self.selectionModel(),
-                     QtCore.SIGNAL("selectionChanged(QItemSelection, QItemSelection)"),
-                     self.get_selection)
+                     QtCore.SIGNAL("selectionChanged(QItemSelection, "
+                                   "QItemSelection)"), self.get_selection)
 
     def get_selection(self):
         indices = self.selectedIndexes()
         self.parent.select_date(indices)
 
-    def right_click(self):
-        menu = QtGui.QMenu(self)
-        delete = QtGui.QAction('Delete', self)
-        menu.addAction(delete)
-        menu.popup(QtGui.QCursor.pos())
-        delete.triggered.connect(self.delete_item)
+    def keyPressEvent(self, e):
+        """Needed because edit triggers are disabled to prevent view entering
+        edit mode on a key press (from jobTracker.py)"""
+        if e.key() == QtCore.Qt.Key_F2:
+            self.parent.explorer.show()
+        return
 
-    def delete_item(self):
-        print("Delete")
-        pass
-        index = self.selectedIndexes()[0]
-        date = self.parent.model.itemFromIndex(index)
-        date.removeRow(0)
-        #self.parent.clear_input()
-        # TODO clear coloured background - check whole entry is removed
+

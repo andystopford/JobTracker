@@ -1,14 +1,16 @@
 #!/usr/bin/python
-import xml.etree.ElementTree as ET
-import os.path
-from decimal import Decimal
-import pytz  # For local time adjustment
 import datetime
-from TimeConverter import*
-from TrackPoint import*
-import geopy, geopy.distance
+import os.path
+import xml.etree.ElementTree as ET
 from bisect import bisect_left  # For getting closest numbers in list
+from decimal import Decimal
 from math import *
+
+import geopy
+import geopy.distance
+import pytz  # For local time adjustment
+from TimeConverter import *
+from TrackPoint import *
 
 
 class GpsAnalyser():
@@ -45,7 +47,7 @@ class GpsAnalyser():
                     hour = int(date[11:13])
                     mins = int(date[14:16])
                     secs = int(date[17:19])
-                    wet = pytz.timezone('WET')
+                    wet = pytz.timezone('Europe/London')
                     date_time = datetime.datetime(year, month, day, hour, mins, secs)
                     timezone_offset = wet.utcoffset(date_time)
                     timezone_offset = str(timezone_offset)
@@ -64,8 +66,10 @@ class GpsAnalyser():
                                 time = time[11:16]  # We only want hours and minutes.
                                 timeConverter = TimeConverter()
                                 time_TC = timeConverter.get_time_mins(time)  # convert to mins
-                                # Add offset + 60 because of phone weirdness
-                                time = time_TC + (int(timezone_offset) * 60) + 60
+                                time = time_TC
+                                if timezone_offset != '0':
+                                    # Add offset + 60 because of phone weirdness
+                                    time = time + (int(timezone_offset) * 60) + 60
                             if item.tag == name_space + 'course':
                                 course = item.text
                             if item.tag == name_space + 'speed':

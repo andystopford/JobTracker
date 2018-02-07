@@ -10,4 +10,7 @@ class TrackModel(QtGui.QStandardItemModel):
         self.setColumnCount(4)
         self.setHorizontalHeaderLabels(['Start', 'End', 'Hours', 'Miles'])
 
+    def reset(self):
+        self.setHorizontalHeaderLabels(['Start', 'End', 'Hours', 'Miles'])
+
 
