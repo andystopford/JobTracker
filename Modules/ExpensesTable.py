@@ -1,3 +1,5 @@
+from decimal import *
+
 from PyQt4 import QtCore, QtGui
 
 
@@ -57,10 +59,11 @@ class ExpensesTable(QtGui.QTableWidget):
 
     def total(self, exp_list):
         row_count = self.rowCount()
-        total_cost = 0.00
-        for item in exp_list:
-            if len(item) == 2:
-                total_cost += float(item[1])
+        total_cost = Decimal(0.00).quantize(Decimal('.01'))
+        for exp_item in exp_list:
+            if len(exp_item) == 2:
+                cost = Decimal(exp_item[1]).quantize(Decimal('.01'))
+                total_cost += cost
         colour = QtGui.QColor(255, 159, 161)
         brush = QtGui.QBrush(colour)
         text_colour = QtGui.QColor('#1d1e1f')
