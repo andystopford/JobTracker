@@ -102,7 +102,7 @@ class HoursTable(QtGui.QTableWidget):
         ticket = self.parent.get_ticket()
         row = int(self.currentRow())
         ticket.delete_track(row)
-        self.clear()
+        self.removeRow(row)
         self.fill_table()
         self.parent.dirty = True
 

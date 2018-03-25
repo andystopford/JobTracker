@@ -27,6 +27,7 @@ class MapView(QtWebKit.QWebView):
             self.frame.evaluateJavaScript(f.read())
             self.frame.evaluateJavaScript('add_osm_map();')
             #self.frame.evaluateJavaScript('nom_router();')
+            self.toggle_router()
 
     def osm_map(self):
         """Load standard OSM vector map"""
@@ -153,12 +154,20 @@ class MapView(QtWebKit.QWebView):
 
     # Routing
     def route(self):
+        """Calculate route between two postcodes"""
         pio = PostcodeIO()
         postcode_from = self.parent.ui.from_box.text()
         go_from = pio.get_latlng(postcode_from)
-        postcode_to = self.parent.ui.to_box.text()
-        go_to = pio.get_latlng(postcode_to)
-        self.frame.evaluateJavaScript('route({}, {});'.format(go_from, go_to))
+        if self.parent.ui.to_box.text():
+            postcode_to = self.parent.ui.to_box.text()
+            go_to = pio.get_latlng(postcode_to)
+            self.frame.evaluateJavaScript('remove_pcode_marker();')
+            self.frame.evaluateJavaScript('route({}, {});'
+                                          .format(go_from, go_to))
+        else:
+            self.frame.evaluateJavaScript('remove_pcode_marker();')
+            self.frame.evaluateJavaScript('draw_pcode_marker({});'
+                                          .format(go_from))
 
     def toggle_router(self):
         """Toggle visibility of routing control on map"""
@@ -172,7 +181,9 @@ class MapView(QtWebKit.QWebView):
             self.parent.ui.button_rhide.setText("Show Routing")
 
     def clear_route(self):
+        """Remove route display and markers"""
         self.frame.evaluateJavaScript('clear_route();')
+        self.frame.evaluateJavaScript('remove_pcode_marker();')
 
     def test(self):
         test = self.frame.evaluateJavaScript('test();')

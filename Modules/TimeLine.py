@@ -61,7 +61,8 @@ class TimeLine:
         self.tl_point_list.append(self.time_posn)
         self.event_count += 1
         # return to JT key_press_event
-        return start_time, end_time, hours_done, self.tl_point_list, start, finish
+        return start_time, end_time, hours_done, self.tl_point_list, start, \
+            finish
 
     def set_time_posn(self, lon, lat):
         self.time_posn = (lon, lat)

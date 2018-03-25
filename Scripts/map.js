@@ -52,7 +52,8 @@ map.on('move', function() {
 
 // Get map centre for display read-out
 if(typeof MainWindow != 'undefined') {
-    var onMapMove = function() { MainWindow.onMapMove(map.getCenter().lat, map.getCenter().lng) ;}
+    var onMapMove = function() { MainWindow.onMapMove(map.getCenter().lat,
+    map.getCenter().lng) ;}
     map.on('move', onMapMove);
     onMapMove();
     }
@@ -88,66 +89,21 @@ function clear_route() {
     routeControl.getPlan().setWaypoints([]);
     }
 
-//Pick route
-/*
-function createButton(label, container) {
-    var btn = L.DomUtil.create('button', '', container);
-    btn.setAttribute('type', 'button');
-    btn.innerHTML = label;
-    return btn;
+// Add a postcode location marker group
+var pcode_grp = L.layerGroup().addTo(map);
+
+function draw_pcode_marker(latlng) {
+    // Add a postcode location marker
+    var pcode_marker = L.marker();
+    pcode_marker.setLatLng(latlng);
+    pcode_grp.addLayer(pcode_marker)
     }
 
-function createButton(label, container) {
-    var btn = L.DomUtil.create('button', '', container);
-    btn.setAttribute('type', 'button');
-    btn.innerHTML = label;
-    return btn;
+function remove_pcode_marker() {
+    // Remove postcode location marker (if required).
+    pcode_grp.clearLayers();
     }
 
-map.on('click', function(e) {
-    var container = L.DomUtil.create('div'),
-        startBtn = createButton('Start from this location', container),
-        destBtn = createButton('Go to this location', container);
-    L.popup()
-        .setContent(container)
-        .setLatLng(e.latlng)
-        .openOn(map);
-    L.DomEvent.on(startBtn, 'click', function() {
-        //MainWindow.map_clicked(e.latlng);
-        //alert('adding')
-        routing.spliceWaypoints(0, 1, e.latlng);
-        map.closePopup();
-        });
-    L.DomEvent.on(destBtn, 'click', function() {
-        routing.spliceWaypoints(routing.getWaypoints().length - 1, 1, e.latlng);
-        map.closePopup();
-        });
-    });
-
-var ReversablePlan = L.Routing.Plan.extend({
-    createGeocoders: function() {
-        var container = L.Routing.Plan.prototype.createGeocoders.call(this),
-            reverseButton = createButton('↑↓', container);
-            L.DomEvent.on(reverseButton, 'click', function()
-             { var waypoints = this.getWaypoints();
-             this.setWaypoints(waypoints.reverse());
-             }, this);
-        return container;
-    }
-});
-
-var plan = new ReversablePlan([
-        L.latLng(57.74, 11.94),
-        L.latLng(57.6792, 11.949)
-    ], {
-        geocoder: L.Control.Geocoder.nominatim(),
-        routeWhileDragging: true
-    }),
-    control = L.Routing.control({
-        routeWhileDragging: true,
-        plan: plan
-    }).addTo(map);
-*/
 ///////////////////////////////////////////////////////////////////////////////
 // Draw track from GPS points
 var track_layer_grp = L.layerGroup().addTo(map);
@@ -223,7 +179,7 @@ function add_segment(latlngs, colour) {
 function add_start(lat, lng, time) {
     start_layer = L.marker([lat, lng], {icon: startIcon});
     grp.addLayer(start_layer);
-    start_layer.bindPopup(time).openPopup();
+    //start_layer.bindPopup(time).openPopup();
     ;}
 
 var endIcon = new L.Icon({

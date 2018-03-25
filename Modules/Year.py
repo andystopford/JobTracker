@@ -5,7 +5,8 @@ import itertools
 
 class Year:
     def __init__(self, parent, year):
-        """ Make list of the year's dates sorted by month to set up model display"""
+        """ Make list of the year's dates sorted by month to set up model
+        display"""
         self.cal = calendar.Calendar()
         self.year = year
         self.parent = parent

@@ -16,11 +16,13 @@ class DataIO:
         """Module to read/write disc files"""
         self.path = './Logs'
         self.parent = parent
-        # TODO This path is for testing only!
-        self.user_path = "/home/andy/Projects/Programming/Python/JobTracker2/JobTrackerUser/"
+        # TODO This path is for testing only! Implement Prefs in Explorer
+        self.user_path = "/home/andy/Projects/Programming/Python/JobTracker2" \
+                         "/JobTrackerUser/"
 
     def get_gpx(self):
         """Copies .gpx files from Dropbox to ./Logs directory"""
+        # TODO Implement path Prefs in Explorer
         source_path = '/home/andy/Dropbox/Apps/GPSLogger for Android/'
         source = os.listdir(source_path)
         for gpx_file in source:
@@ -80,7 +82,8 @@ class DataIO:
                             colour = QtGui.QColor(colour)
                             # colour.setAlpha(127)
                             brush = QtGui.QBrush(colour)
-                            track = Track(start, end, hours, miles, trk_notes, brush)
+                            track = Track(start, end, hours, miles, trk_notes,
+                                          brush)
                             ticket.add_track(track)
                         expenses = tkt[4]
                         for exp in expenses:
@@ -105,7 +108,8 @@ class DataIO:
         tree = ET.ElementTree(root)
         for key in model_dict:
             model = model_dict[key]
-            # Seems like year needs to be switched to add other years to model_dict
+            # Seems like year needs to be switched to add other
+            # years to model_dict
             for row in range(model.rowCount()):
                 for col in range(model.columnCount()):
                     item = model.item(row, col)
@@ -129,8 +133,10 @@ class DataIO:
                                 tkt_job = ET.SubElement(tkt_name, 'Job')
                                 tkt_notes = ET.SubElement(tkt_name, 'Notes')
                                 tkt_tracks = ET.SubElement(tkt_name, 'Tracks')
-                                tkt_expenses = ET.SubElement(tkt_name, 'Expenses')
-                                tkt_payment = ET.SubElement(tkt_name, 'Payment')
+                                tkt_expenses = ET.SubElement(tkt_name,
+                                                             'Expenses')
+                                tkt_payment = ET.SubElement(tkt_name,
+                                                            'Payment')
                                 tkt_date.set('row', str(row))
                                 tkt_date.set('col', str(col))
                                 tkt_date.set('date', date)
@@ -140,7 +146,8 @@ class DataIO:
                                 tkt_payment.set('payment', payment[0])
                                 tkt_payment.set('Amount', payment[1])
                                 for i, track in enumerate(track_list):
-                                    trk = ET.SubElement(tkt_tracks, ('Track' + str(i)))
+                                    trk = ET.SubElement(tkt_tracks,
+                                                        ('Track' + str(i)))
                                     trk.set('start', track.get_start())
                                     trk.set('end', track.get_end())
                                     trk.set('hours', track.get_hours())
@@ -149,7 +156,8 @@ class DataIO:
                                     trk.set('colour', track.get_colour())
                                     # trk.set('gps', track.get_gps())
                                 for i, expense in enumerate(expenses_list):
-                                    exp = ET.SubElement(tkt_expenses, ('Expense' + str(i)))
+                                    exp = ET.SubElement(tkt_expenses,
+                                                        ('Expense' + str(i)))
                                     exp.set('item', expense[0])
                                     exp.set('cost', expense[1])
                                 tkt_job.text = job

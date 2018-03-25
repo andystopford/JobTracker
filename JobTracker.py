@@ -10,7 +10,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, see <http://www.gnu.org/licenses/>.
 #
-# JobTracker version 2.2.0  07/02/18
+# JobTracker version 2.2.0  25/03/18
 #######################################################################
 import sys
 sys.path.append("./Modules")
@@ -25,12 +25,16 @@ from YearView import *
 from MapView import *
 from GpsAnalyser import *
 from TrackPoint import *
-from TimeLine import *
+from TimeLine import TimeLine
 from DateDisplay import *
 from TimeConverter import *
 from TrackModel import *
-from Explorer import *
+from Explorer import Explorer
 import DarkStyle
+from Completer import Completer
+from Timer import Timer
+from WaitingSpinner import QtWaitingSpinner
+# from Ticket import Track
 
 
 class MainWindow(QtGui.QMainWindow):
@@ -42,17 +46,44 @@ class MainWindow(QtGui.QMainWindow):
         self.setWindowIcon(QtGui.QIcon('./Icons/shackles.png'))
         self.setStyleSheet(DarkStyle.load_stylesheet())
 
+        ##################################################
+        # Initialise
+        self.dateDisplay = DateDisplay(self.ui.yearView)
+        self.trackModel = TrackModel(self)
+        self.timeLine = TimeLine(self)
+        self.explorer = Explorer(self)
+        self.spinner = QtWaitingSpinner(self.ui.spinner_widget)
+        self.timer = Timer(self)
+        self.model = None
+        self.table_proxy_model = QtGui.QSortFilterProxyModel()
+        self.ui.trackTable.setDragDropMode(QtGui.QAbstractItemView.DragOnly)
+        self.ui.ticketNotes.installEventFilter(self)
+        self.ui.expensesTable.installEventFilter(self)
+        self.ui.job_name_box.installEventFilter(self)
+        self.ui.paymentTable.installEventFilter(self)
+        self.timer_tkt = None
+        self.model_dict = {}
+        self.key_list = []  # temp store for model_dict keys
+        self.point_list = []
+        self.dirty = False
+        self.time_block = 1  # For map marker popups
+        self.selected_indices = []
+        today = datetime.date.today()
+        self.year = today.year
+        self.showMaximized()
+        self.startup()
+
         # Signals
         self.ui.button_test.clicked.connect(self.test)
         self.ui.button_back.clicked.connect(self.year_back)
         self.ui.button_forward.clicked.connect(self.year_forward)
         self.ui.button_save.clicked.connect(self.save)
         self.ui.time_slider.valueChanged.connect(self.get_curr_time)
-        self.ui.button_map.toggled.connect\
+        self.ui.button_map.toggled.connect \
             (lambda: self.select_map(self.ui.button_map))
-        self.ui.button_terrain.toggled.connect\
+        self.ui.button_terrain.toggled.connect \
             (lambda: self.select_map(self.ui.button_terrain))
-        self.ui.button_sat.toggled.connect\
+        self.ui.button_sat.toggled.connect \
             (lambda: self.select_map(self.ui.button_sat))
         self.ui.button_route.clicked.connect(self.ui.mapView.route)
         self.ui.button_rhide.clicked.connect(self.ui.mapView.toggle_router)
@@ -66,43 +97,24 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.menu_tickets.addAction('Removal', self.add_rem_ticket)
         self.ui.menu_tickets.addAction('Work', self.add_wrk_ticket)
         self.ui.menu_tickets.addAction('Other', self.add_oth_ticket)
-
-        ##################################################
-        # Initialise
-        self.dateDisplay = DateDisplay(self.ui.yearView)
-        self.trackModel = TrackModel(self)
-        self.timeLine = TimeLine(self)
-        self.explorer = Explorer(self)
-        self.model = None
-        self.table_proxy_model = QtGui.QSortFilterProxyModel()
-        self.ui.trackTable.setDragDropMode(QtGui.QAbstractItemView.DragOnly)
-        self.ui.ticketNotes.installEventFilter(self)
-        self.ui.expensesTable.installEventFilter(self)
-        self.ui.job_name_box.installEventFilter(self)
-        self.ui.paymentTable.installEventFilter(self)
-        self.model_dict = {}
-        self.key_list = []  # temp store for model_dict keys
-        self.point_list = []
-        self.dirty = False
-        self.time_block = 1  # For map marker popups
-        self.selected_indices = []
-        today = datetime.date.today()
-        self.year = today.year
-        self.showMaximized()
-        self.startup()
+        # Timer
+        self.ui.button_start_pause.clicked.connect(self.timer.start_timing)
+        self.ui.button_apply.clicked.connect(self.timer.apply_timer)
+        self.ui.button_clear.clicked.connect(self.timer.clear)
+        self.ui.menu_curr_tickets.triggered.connect(self.timer.select_ticket)
 
     def eventFilter(self, source, event):
         """Detects TicketNotes losing focus and saves its contents to the
         current ticket"""
         if (event.type() == QtCore.QEvent.FocusOut and
-                    source is self.ui.ticketNotes):
+                source is self.ui.ticketNotes):
             self.ui.ticketNotes.save()
         if (event.type() == QtCore.QEvent.FocusOut and
-                    source is self.ui.job_name_box):
+                source is self.ui.job_name_box):
             job = self.ui.job_name_box.text()
             self.set_job(job)
         if (event.type() == QtCore.QEvent.FocusOut and
-                    source is self.ui.paymentTable):
+                source is self.ui.paymentTable):
             self.ui.paymentTable.update()
             self.ui.paymentTable.clearSelection()
         return super(MainWindow, self).eventFilter(source, event)
@@ -139,6 +151,7 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.trackTable.set_selection_model(self.trackModel)
         self.ui.trackTable.setSortingEnabled(True)
         self.ui.yearView.setItemDelegate(self.dateDisplay)
+        self.ui.button_start_pause.setEnabled(False)
         self.init_model()
         self.setup_year(True)
         dataIO.open()
@@ -170,7 +183,7 @@ class MainWindow(QtGui.QMainWindow):
         self.model = self.model_dict[self.year]
 
     def setup_year(self, new_year):
-        """Populates dateDisplay"""
+        """Sets display of current year"""
         self.ui.yearView.setModel(self.model)
         self.ui.yearView.set_selection_model(self.model)
         self.ui.label_year.setText(str(self.year))
@@ -178,8 +191,10 @@ class MainWindow(QtGui.QMainWindow):
         log_list = dataIO.get_logs(self.year)
         date_list = self.model.set_year(self.year, new_year)
         self.dateDisplay.setup(date_list, log_list)
+        self.ui.job_name_box.setCompleter(Completer(self))
 
     def test(self):
+        print('JobTracker.test()')
         return
 
     def year_back(self):
@@ -375,7 +390,8 @@ class MainWindow(QtGui.QMainWindow):
             sel = self.ui.jobTickets.item(0)
             self.ui.jobTickets.setCurrentItem(sel)
             self.ui.jobTickets.select_ticket()
-            self.explorer.refresh_today()
+            # self.explorer.refresh_today()
+            self.timer.fill_menu()
 
     def set_job(self, job):
         current_ticket = self.get_ticket()
@@ -393,7 +409,7 @@ class MainWindow(QtGui.QMainWindow):
             track_seg = self.track_segment(item[0], item[1], item[2])
             self.ui.mapView.add_segment(track_seg[0], track_seg[1])
 
-        # GPS Tracks ##############################################
+    # GPS Tracks ##############################################
 
     def track_segment(self, start, end, col=None):
         """Selects the trackpoints between the specified times"""
@@ -410,13 +426,14 @@ class MainWindow(QtGui.QMainWindow):
         return leg_points, colour
 
     def colour_cells(self, colour):
+        """Colour rows in TrackTable"""
         row = self.trackModel.rowCount() - 1
         col = QtGui.QColor()
         col.setNamedColor(colour)
-        col.setAlpha(127)
         for i in range(4):
             cell = self.trackModel.item(row, i)
             cell.setBackground(col)
+            cell.setForeground(QtGui.QColor('#1d1e1f'))
 
     def segment_dist(self, leg_points):
         gpsAnalyser = GpsAnalyser(self)
@@ -441,16 +458,17 @@ class MainWindow(QtGui.QMainWindow):
 
     def closeEvent(self, event):
         """On closing application window"""
-        if self.explorer.timer_dirty:
-            reply = QtGui.QMessageBox.question(self, "Timer Running",
-                                               "Timer Running: Open ?",
-                                               QtGui.QMessageBox.Yes |
-                                               QtGui.QMessageBox.No |
-                                               QtGui.QMessageBox.Cancel)
+        if self.timer.timer_dirty:
+            reply = QtGui.QMessageBox.warning(self, "Timer Running",
+                                              "Timer Running: Stop and "
+                                              "Save?", QtGui.QMessageBox.Yes
+                                              | QtGui.QMessageBox.No |
+                                              QtGui.QMessageBox.Cancel)
             if reply == QtGui.QMessageBox.Cancel:
                 event.ignore()
             elif reply == QtGui.QMessageBox.Yes:
-                self.explorer.show()
+                self.timer.pause()
+                self.timer.apply_timer()
                 event.ignore()
             elif reply == QtGui.QMessageBox.No:
                 if self.dirty:

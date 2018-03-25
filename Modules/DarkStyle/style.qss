@@ -147,7 +147,7 @@ QLineEdit
 {
     background-color: #1d1e1f;
     padding: 1px;
-    border: 1px solid #333d3f;
+    border: 2px solid #333d3f;
     border-radius: 2px;
     border-style: inset;
     color: #bfc8cf;
@@ -362,7 +362,7 @@ QTableView
 
 QTextEdit
 {
-    border: 1px solid #333d3f;
+    border: 2px solid #333d3f;
     border-radius: 2px;
     border-style: inset;
     gridline-color: #31363b;

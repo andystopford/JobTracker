@@ -37,9 +37,11 @@ class JobTickets(QtGui.QListWidget):
         curr_item = self.currentItem()
         day = self.parent.get_day()
         ticket_list = day[0].get_ticket_list(day[1], day[2])
+        self.parent.ui.menu_curr_tickets.clear()
         for tkt in ticket_list:
             if tkt.get_name() == old_name:
                 tkt.set_name(curr_item.text())
+        self.parent.timer.fill_menu()
         self.parent.dirty = True
 
     def rclick_menu(self):

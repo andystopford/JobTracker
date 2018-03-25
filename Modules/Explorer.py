@@ -7,7 +7,6 @@ from Explorer_UI import Explorer_Ui
 from TimeConverter import *
 from Timer import *
 from Year import *
-from Ticket import Track
 from WaitingSpinner import QtWaitingSpinner
 import time
 
@@ -26,7 +25,7 @@ class Explorer(QtGui.QMainWindow):
                          "/JobTrackerUser/"
         self.timer = Timer(self)
         self.spinner = QtWaitingSpinner(self.ui.spinner_widget)
-        self.spinner.setRoundness(70.0)
+        #self.spinner.setRoundness(70.0)
         self.spinner.setMinimumTrailOpacity(15.0)
         self.spinner.setTrailFadePercentage(70.0)
         self.spinner.setNumberOfLines(18)
@@ -36,7 +35,7 @@ class Explorer(QtGui.QMainWindow):
         self.spinner.setRevolutionsPerSecond(1)
         self.spinner.setColor(QtGui.QColor('#5500ff'))
         # Signals
-        self.ui.tabWidget.currentChanged.connect(self.tab_changed)
+        #self.ui.tabWidget.currentChanged.connect(self.tab_changed)
         self.ui.name_clear_button.clicked.connect(self.clear_names)
         self.ui.jobs_clear_button.clicked.connect(self.clear_jobs)
         self.ui.notes_clear_button.clicked.connect(self.clear_notes)
@@ -54,10 +53,6 @@ class Explorer(QtGui.QMainWindow):
         self.ui.costs_table.cellClicked.connect(self.select_day)
         header = self.ui.costs_table.horizontalHeader()
         header.sectionClicked.connect(self.check_all)
-        self.ui.button_start_pause.clicked.connect(self.start_timer)
-        self.ui.button_apply.clicked.connect(self.apply_timer)
-        self.ui.button_clear.clicked.connect(self.clear_timer)
-        self.ui.ticket_list.itemClicked.connect(self.tkt_selected)
 
         self.ticket_list = []
         self.timer_tkt = None
@@ -324,99 +319,6 @@ class Explorer(QtGui.QMainWindow):
         model = self.parent.model_dict[year]
         index = model.index(row, col)
         self.parent.ui.yearView.setCurrentIndex(index)
-
-    # Time ###################################################
-    def start_timer(self):
-        self.timer.timer_start()
-        self.ui.button_start_pause.clicked.disconnect(self.start_timer)
-        self.ui.button_start_pause.clicked.connect(self.pause_timer)
-        self.ui.button_start_pause.setText('Pause')
-        self.timer_dirty = True
-        self.spinner.start()
-
-    def pause_timer(self):
-        curr_time = self.timer.timer_pause()
-        self.ui.time_total.setText(curr_time)
-        self.ui.button_start_pause.clicked.disconnect(self.pause_timer)
-        self.ui.button_start_pause.clicked.connect(self.start_timer)
-        self.ui.button_start_pause.setText('Start')
-        self.ui.button_apply.setEnabled(True)
-        self.ui.button_clear.setEnabled(True)
-        self.spinner.stop()
-
-    def tab_changed(self, e):
-        if e == 2:
-            self.refresh_today()
-
-    def refresh_today(self):
-        self.ui.ticket_list.clear()
-        self.ui.time_notes.clear()
-        self.ui.time_notes.setPlaceholderText("Notes")
-        todays_tkts = self.get_today()
-        if todays_tkts:
-            for tkt in todays_tkts:
-                name = tkt.get_name()
-                name = QtGui.QListWidgetItem(name)
-                self.ui.ticket_list.addItem(name)
-
-    def get_today(self):
-        date = time.strftime("%d/%m/%Y")
-        year = int(date[6:10])
-        year_instance = Year(self, year)
-        day = int(date[0:2])
-        month = int(date[3:5])
-        col = year_instance.get_column(month, day)
-        row = month - 1
-        model = self.parent.model_dict[year]
-        todays_tkts = model.get_ticket_list(row, col)
-        return todays_tkts
-
-
-
-    def tkt_selected(self, e):
-        selection = e.text()
-        todays_tkts = self.get_today()
-        for tkt in todays_tkts:
-            if tkt.get_name() == selection:
-                self.timer_tkt = tkt
-                #self.ui.button_apply.setEnabled(True)
-
-    def apply_timer(self):
-        self.parent.dirty = True
-        if self.timer_tkt:
-            if self.ui.time_notes.text():
-                notes = self.ui.time_notes.text()
-            else:
-                notes = 'Timer'
-            tot_time = self.ui.time_total.toPlainText()
-            self.tkt_add_track(self.timer_tkt, tot_time, notes)
-            self.clear_timer()
-
-            self.ui.timer_warning.clear()
-        else:
-            self.timer_warning()
-
-    def timer_warning(self):
-        warning = 'Warning: No ticket set/selected for today'
-        self.ui.timer_warning.setText(warning)
-        self.ui.timer_warning.setStyleSheet('color: red')
-
-    def tkt_add_track(self, ticket, tot_time, notes):
-        colour = QtGui.QColor(195, 218, 255)
-        brush = QtGui.QBrush(colour)
-        track = Track('', '', tot_time, '0', notes, brush)
-        ticket.add_track(track)
-        if self.parent.selected_indices:
-            self.parent.display_tickets()
-
-    def clear_timer(self):
-        self.timer.timer_clear()
-        self.ui.time_running.setText('')
-        self.ui.time_total.clear()
-        self.ui.timer_warning.clear()
-        self.timer_dirty = False
-        self.ui.button_apply.setEnabled(False)
-        self.ui.button_clear.setEnabled(False)
 
 
 ###############################################################################
