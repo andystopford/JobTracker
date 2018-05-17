@@ -158,6 +158,11 @@ QLineEdit:focus, QLineEdit:hover
     border: 1px solid #5500ff;
 }
 
+QListWidget
+{
+    selection-background-color: rgb(255,0,0);
+}
+
 QMenu
 {
     background-color: #1d1e1f;

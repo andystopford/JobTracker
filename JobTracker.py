@@ -10,14 +10,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, see <http://www.gnu.org/licenses/>.
 #
-# JobTracker version 2.2.0  25/03/18
+# JobTracker version 2.3.0  17/05/18
 #######################################################################
 import sys
 sys.path.append("./Modules")
 sys.path.append("./UI")
 sys.path.append("./Icons")
 from PyQt4 import QtCore, QtGui, Qt
-import datetime
+from datetime import date
 from UI import Ui_mainWindow
 from IO import *
 from Model import *
@@ -68,7 +68,7 @@ class MainWindow(QtGui.QMainWindow):
         self.dirty = False
         self.time_block = 1  # For map marker popups
         self.selected_indices = []
-        today = datetime.date.today()
+        today = date.today()
         self.year = today.year
         self.showMaximized()
         self.startup()
@@ -253,6 +253,8 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.mapView.draw_tracker(posn)
         self.timeLine.set_time_posn(posn[0], posn[1])
 
+        #gpsAnalyser.get_next(display[1])
+
     def select_date(self, indices):
         """Load tickets from selected date"""
         index = indices[0]
@@ -264,6 +266,7 @@ class MainWindow(QtGui.QMainWindow):
         self.model.set_year(self.year, False)
         self.selected_indices = indices
         self.timeLine.zero_time_list()
+
         self.get_track(date)
         self.display_tickets()
         self.ui.jobTickets.clearSelection()
@@ -274,6 +277,7 @@ class MainWindow(QtGui.QMainWindow):
         date = date.toString(1)
         date = date.replace('-', '')
         gpsAnalyser = GpsAnalyser(self)
+        # log_file = gpsAnalyser.get_log_file('090518.log')
         self.point_list = gpsAnalyser.get_data(date)
         self.ui.mapView.draw_track(self.point_list)
         self.ui.mapView.draw_waypoints(self.point_list)

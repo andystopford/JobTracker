@@ -3,12 +3,14 @@ import sys
 from PyQt4 import QtCore, QtGui
 
 sys.path.append("./UI")
+import os.path
 from Explorer_UI import Explorer_Ui
 from TimeConverter import *
-from Timer import *
 from Year import *
-from WaitingSpinner import QtWaitingSpinner
 import time
+import serial
+import serial.tools.list_ports
+import csv
 
 
 class Explorer(QtGui.QMainWindow):
@@ -17,23 +19,12 @@ class Explorer(QtGui.QMainWindow):
         """Controls for filters, totalling expenses, etc."""
         self.ui = Explorer_Ui()
         self.ui.setup_ui(self)
-        # self.resize(500, 250)
+        self.resize(500, 250)
         self.setWindowTitle("JobTracker Explorer")
         self.parent = parent
         # TODO This path is for testing only!
         self.user_path = "/home/andy/Projects/Programming/Python/JobTracker2" \
                          "/JobTrackerUser/"
-        self.timer = Timer(self)
-        self.spinner = QtWaitingSpinner(self.ui.spinner_widget)
-        #self.spinner.setRoundness(70.0)
-        self.spinner.setMinimumTrailOpacity(15.0)
-        self.spinner.setTrailFadePercentage(70.0)
-        self.spinner.setNumberOfLines(18)
-        self.spinner.setLineLength(20)
-        self.spinner.setLineWidth(5)
-        self.spinner.setInnerRadius(20)
-        self.spinner.setRevolutionsPerSecond(1)
-        self.spinner.setColor(QtGui.QColor('#5500ff'))
         # Signals
         #self.ui.tabWidget.currentChanged.connect(self.tab_changed)
         self.ui.name_clear_button.clicked.connect(self.clear_names)
@@ -53,10 +44,12 @@ class Explorer(QtGui.QMainWindow):
         self.ui.costs_table.cellClicked.connect(self.select_day)
         header = self.ui.costs_table.horizontalHeader()
         header.sectionClicked.connect(self.check_all)
+        self.ui.connect_button.clicked.connect(self.open_serial)
+        self.ui.download_button.clicked.connect(self.download_sel)
+        self.ui.delete_button.clicked.connect(self.delete_file)
 
         self.ticket_list = []
-        self.timer_tkt = None
-        self.timer_dirty = False
+        self.ser = serial.Serial()
 
     def chkBox_changed(self):
         try:
@@ -319,6 +312,151 @@ class Explorer(QtGui.QMainWindow):
         model = self.parent.model_dict[year]
         index = model.index(row, col)
         self.parent.ui.yearView.setCurrentIndex(index)
+    ###########################################################################
+    # Import Tab
+    def open_serial(self):
+        """Get list of serial ports, check if tracker is connected and
+                send handshake message"""
+        ports = list(serial.tools.list_ports.comports())
+        for p in ports:
+            if 'CP2102 USB to UART' in p[1]:
+                port = p[0]
+                # print(port)
+        self.ser = serial.Serial(port)
+        self.ser.baudrate = 9600
+        self.ser.timeout = 1
+        if self.ser.isOpen:
+            self.ser.close()
+        self.ser.open()
+        # self.ser.write(00)  # wake it up
+        msg = 'Opening ' + self.ser.name
+        self.ui.info_display.setText(msg)
+        self.hello()
+
+    def hello(self):
+        """Handshake to to tell tracker to upload list of files on sd card"""
+        # print('Reading Serial')
+        handshake = '<' + 'hello' + '>'  # Key word to instruct Arduino
+        msg = handshake.encode('ascii')
+        # print('handshake', msg)
+        self.ser.write(msg)
+        self.read_file_list()
+
+    def read_file_list(self):
+        """Makes three attempts to read uploaded file list"""
+        data_list = []
+        data = self.ser.readline().strip()
+        count = 0
+        while len(data) == 0:
+            if count < 3:
+                print('blank received')
+                count += 1
+                data = self.ser.readline().strip()
+            else:
+                print('Giving up')
+                data_list = []
+                #self.hello()
+                #self.close_serial()
+                break
+        while data:
+            if len(data) > 0:
+                #print('data', data)
+                text = data.decode('ascii')
+                text = text.strip()
+                self.write_file_list(text)
+                if len(text) > 0:
+                    data_list.append(text)
+                if data == b'\r':
+                    break
+                data = self.ser.readline()
+        #print('======================')
+        #print('data_list', data_list)
+
+    def write_file_list(self, fname):
+        file_item = QtGui.QListWidgetItem()
+        file_item.setText(fname)
+        self.ui.file_lister.addItem(file_item)
+
+    def download_sel(self):
+        """Handshake to instruct tracker to upload selected file"""
+        # print('Reading Log2')
+        sel_files = self.ui.file_lister.selectedItems()
+        for f in sel_files:
+            entry = f.text()
+            name = entry.split(" ")
+            handshake = '<' + name[0] + '>'  # Key word to instruct Arduino
+            msg = handshake.encode('ascii')
+            #print('msg', msg)
+            self.ser.write(msg)
+            # self.read_sd()
+            self.read(name[0])
+
+    def read(self, name):
+        """Makes three attempts to read uploaded file"""
+        data_list = []
+        data = self.ser.readline()
+        count = 0
+        if len(name) == 9:
+            name = '0' + name
+        y = str('20' + name[4:6])
+        m = str(name[2:4])
+        d = str(name[0:2])
+        name = y + m + d + '.log'
+        while len(data) == 0:
+            if count < 3:
+                print('blank received')
+                self.ui.info_display.append('Blank received')
+                count += 1
+            else:
+                print('Giving up')
+                self.ui.info_display.append('Giving up')
+                break
+            data = self.ser.readline()
+        while data:
+            #print(data)
+            if len(data) > 0:
+                text = data.decode('ascii')
+                text = text.strip()
+                # text = text.replace("/", ",")
+                print(text)
+                self.ui.info_display.append(text)
+                if len(text) > 0:
+                    data_list.append([text])
+                    #print('text', text)
+                if data == b'\r':
+                    print('end')
+                    break
+            data = self.ser.readline()
+        print('======================')
+        print('data', data_list)
+        if len(data_list) > 0:
+            d = os.path.dirname(os.getcwd())  # Get path to parent directory
+            log_path = d + '/JobTracker2/Logs/'
+            writer = csv.writer(open(log_path + name, 'w+'), delimiter="/")
+            for row in data_list:
+                writer.writerow(row)
+            print('Write complete')
+            self.ui.info_display.append('Write complete')
+        else:
+            print('No data written')
+            self.ui.info_display.append('No data written')
+
+    def delete_file(self):
+        sel_files = self.ui.file_lister.selectedItems()
+        for f in sel_files:
+            entry = f.text()
+            name = entry.split(" ")
+        handshake = '<' + 'D' + name[0] + '>'  # Key word to instruct Arduino
+        msg = handshake.encode('ascii')
+        # print('msg', msg)
+        self.ser.write(msg)
+        self.ui.info_display.append(name[0] + ' Deleted')
+        self.ui.file_lister.clear()
+        self.read_file_list()
+
+    def close_serial(self):
+        self.ser.close()
+        print('Serial closed')
 
 
 ###############################################################################

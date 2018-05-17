@@ -1,6 +1,6 @@
 from ExpensesTable import *
 from HoursTable import *
-from PyQt4 import QtGui, QtCore
+from PyQt4 import QtGui
 
 
 class Explorer_Ui(object):
@@ -32,19 +32,12 @@ class Explorer_Ui(object):
                                                     'Hours',
                                                     'Miles', 'Expenses',
                                                     'Payments', 'Select'])
-        # Timer
-        self.ticket_list = QtGui.QListWidget()
-        self.time_running = QtGui.QTextEdit()
-        self.time_total = QtGui.QTextEdit()
-        self.time_notes = QtGui.QLineEdit()
-        self.time_notes.setPlaceholderText("Notes")
-        self.button_start_pause = QtGui.QPushButton("Start")
-        self.button_apply = QtGui.QPushButton("Apply")
-        self.button_clear = QtGui.QPushButton("Clear")
-        self.button_apply.setEnabled(False)
-        self.button_clear.setEnabled(False)
-        self.timer_warning = QtGui.QLabel()
-        self.spinner_widget = QtGui.QWidget()
+        # Import
+        self.connect_button = QtGui.QPushButton('Open Serial')
+        self.download_button = QtGui.QPushButton('Download File')
+        self.delete_button = QtGui.QPushButton('Delete File')
+        self.file_lister = QtGui.QListWidget()
+        self.info_display = QtGui.QTextEdit()
 
         self.tabWidget = QtGui.QTabWidget()
 
@@ -95,39 +88,21 @@ class Explorer_Ui(object):
         job_widget = QtGui.QWidget()
         job_layout = QtGui.QHBoxLayout()
         details_layout = QtGui.QVBoxLayout()
-
         job_widget.setLayout(job_layout)
         job_layout.addLayout(details_layout)
         details_layout.addWidget(self.costs_table)
 
-        # Timer tab
-        align = QtCore.Qt.Alignment(0)
-        self.time_running.setMaximumHeight(30)
-        self.time_total.setMaximumHeight(30)
-        self.time_notes.setMaximumHeight(30)
-        timer_widget = QtGui.QWidget()
-        timer_horiz_layout = QtGui.QHBoxLayout()
-        timer_layout = QtGui.QVBoxLayout()
-        timer_grid = QtGui.QGridLayout()
-        timer_widget.setLayout(timer_horiz_layout)
-        timer_horiz_layout.addLayout(timer_layout)
-        timer_horiz_layout.addWidget(self.ticket_list)
+        # Import tab
+        import_widget = QtGui.QWidget()
+        import_layout = QtGui.QGridLayout()
+        import_widget.setLayout(import_layout)
+        import_layout.addWidget(self.connect_button, 0, 0)
+        import_layout.addWidget(self.file_lister, 1, 0)
+        import_layout.addWidget(self.download_button, 2, 0)
+        import_layout.addWidget(self.delete_button, 3, 0)
+        import_layout.addWidget(self.info_display, 0, 1, 4, 1)
 
-        timer_layout.addLayout(timer_grid)
-        timer_layout.addWidget(self.timer_warning)
-        self.timer_warning.setAlignment(QtCore.Qt.AlignRight)
-        timer_layout.addStretch()
-
-        timer_grid.addWidget(self.time_running, 0, 0, align)
-        timer_grid.addWidget(self.time_total, 0, 1, align)
-        timer_grid.addWidget(self.time_notes, 0, 2, align)
-        timer_grid.addWidget(self.button_start_pause, 1, 0, align)
-        timer_grid.addWidget(self.button_apply, 1, 1, align)
-        timer_grid.addWidget(self.button_clear, 1, 2, align)
-
-        self.spinner_widget.setMaximumHeight(100)
-        timer_grid.addWidget(self.spinner_widget, 2, 0)
 
         self.tabWidget.addTab(filters_widget, 'Filter')
         self.tabWidget.addTab(job_widget, 'Jobs')
-        self.tabWidget.addTab(timer_widget, 'Timer')
+        self.tabWidget.addTab(import_widget, 'Import GPS File')

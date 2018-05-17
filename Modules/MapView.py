@@ -2,10 +2,11 @@ import json
 import sys
 
 import matplotlib.cm as cm
+from PostcodesIO import PostcodeIO
 from PyQt4 import QtCore, QtWebKit
 
 sys.path.append('./Scripts/')
-from PostcodesIO import PostcodeIO
+
 
 class MapView(QtWebKit.QWebView):
     def __init__(self, parent):

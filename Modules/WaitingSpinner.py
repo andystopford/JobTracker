@@ -28,17 +28,14 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
 
-#from PyQt4.QtWidgets import *
+# from PyQt4.QtWidgets import *
 
 
 class QtWaitingSpinner(QWidget):
     def __init__(self, parent, centerOnParent=True,
                  disableParentWhenSpinning=False, modality=Qt.NonModal):
         super().__init__(parent)
-
         self._centerOnParent = centerOnParent
-        self._disableParentWhenSpinning = disableParentWhenSpinning
-
         # WAS IN initialize()
         self._color = QColor('#5500ff')
         self._roundness = 70.0
@@ -51,14 +48,12 @@ class QtWaitingSpinner(QWidget):
         self._innerRadius = 16
         self._currentCounter = 0
         self._isSpinning = False
-
         self._timer = QTimer(self)
         self._timer.timeout.connect(self.rotate)
         self.updateSize()
         self.updateTimer()
         self.hide()
         # END initialize()
-
         self.setWindowModality(modality)
         self.setAttribute(Qt.WA_TranslucentBackground)
 
@@ -95,10 +90,6 @@ class QtWaitingSpinner(QWidget):
         self.updatePosition()
         self._isSpinning = True
         self.show()
-
-        if self.parentWidget and self._disableParentWhenSpinning:
-            self.parentWidget().setEnabled(False)
-
         if not self._timer.isActive():
             self._timer.start()
             self._currentCounter = 0
@@ -106,10 +97,6 @@ class QtWaitingSpinner(QWidget):
     def stop(self):
         self._isSpinning = False
         self.hide()
-
-        if self.parentWidget() and self._disableParentWhenSpinning:
-            self.parentWidget().setEnabled(True)
-
         if self._timer.isActive():
             self._timer.stop()
             self._currentCounter = 0

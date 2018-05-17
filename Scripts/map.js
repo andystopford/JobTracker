@@ -125,7 +125,7 @@ var waypoint_grp  = L.layerGroup().addTo(map);
 function add_waypoint(latlng, colour) {
     waypoint_layer = L.circle()
     waypoint_layer.setLatLng(latlng)
-    waypoint_layer.setRadius(20)
+    waypoint_layer.setRadius(2)
     waypoint_layer.setStyle({color: colour})
     waypoint_grp.addLayer(waypoint_layer)
     }

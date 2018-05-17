@@ -1,86 +1,94 @@
-#!/usr/bin/python
-import datetime
-import os.path
+import csv
 import xml.etree.ElementTree as ET
 from bisect import bisect_left  # For getting closest numbers in list
+from datetime import datetime
 from decimal import Decimal
 from math import *
 
 import geopy
 import geopy.distance
-import pytz  # For local time adjustment
-from TimeConverter import *
-from TrackPoint import *
+import os.path
+import pytz
+from TimeConverter import TimeConverter as TC
+from TrackPoint import TrackPoint
 
 
-class GpsAnalyser():
+class GpsAnalyser:
     def __init__(self, parent):
+        """Get GPS information from selected log file and performs tracking
+        operations on it. CSV (.log) and legacy .gpx files supported."""
         self.parent = parent
         self.point_list = []
         self.location_list = []
 
-    def get_data(self, sel_date):
-        pointID = 0
-        jobID = ''
-        time = ''
-        lat = ''
-        lon = ''
-        course = ''
-        data_file = './Logs/' + sel_date + '.gpx'
-        if os.path.isfile(data_file):
-            tree = ET.parse('./Logs/' + sel_date + '.gpx')
-            root = tree.getroot()
-            name_space = root.tag[:-3]
-            for child in root:
-                if child.tag == name_space + 'time':
-                    date = child.text
-                if child.tag == name_space + 'wpt':
-                    for item in child:
-                        if item.tag == name_space + 'name':
-                            jobID = item.text
-                if child.tag == name_space + 'trk':
-                    trackSeg = child[0]
-                    # Find local time offset:
-                    year = int(date[0:4])
-                    month = int(date[5:7])
-                    day = int(date[8:10])
-                    hour = int(date[11:13])
-                    mins = int(date[14:16])
-                    secs = int(date[17:19])
-                    wet = pytz.timezone('Europe/London')
-                    date_time = datetime.datetime(year, month, day, hour, mins, secs)
-                    timezone_offset = wet.utcoffset(date_time)
-                    timezone_offset = str(timezone_offset)
-                    timezone_offset = timezone_offset[0]
-                    for trackPnt in trackSeg:
-                        if trackPnt.tag == name_space + 'trkpt':
-                            lat = trackPnt.attrib['lat']
-                            lat = Decimal(lat)
-                            lat = round(lat, 4)
-                            lon = trackPnt.attrib['lon']
-                            lon = Decimal(lon)
-                            lon = round(lon, 4)
-                        for item in trackPnt.iter():  # i.e. iterate through children of trackPnts
-                            if item.tag == name_space + 'time':
-                                time = item.text
-                                time = time[11:16]  # We only want hours and minutes.
-                                timeConverter = TimeConverter()
-                                time_TC = timeConverter.get_time_mins(time)  # convert to mins
-                                time = time_TC
-                                if timezone_offset != '0':
-                                    # Add offset + 60 because of phone weirdness
-                                    time = time + (int(timezone_offset) * 60) + 60
-                            if item.tag == name_space + 'course':
-                                course = item.text
-                            if item.tag == name_space + 'speed':
-                                speed = item.text
-                            if item.tag == name_space + 'ele':
-                                height = item.text
-                        a_point = TrackPoint(pointID, time, lat, lon, course, speed, height)
-                        self.point_list.append(a_point)
-                        pointID += 1
+    def get_data(self, date):
+        """Read log file and generate list of TrackPoints"""
+        point_list = []
+        date = date[0:8]
+        csv_file = './Logs/' + date + '.log'
+        gpx_file = './Logs/' + date + '.gpx'
+        if os.path.exists(csv_file):
+            point_list = self.get_csv_data(csv_file, date)
+        elif os.path.exists(gpx_file):
+            point_list = self.get_gpx_data(gpx_file)
         # return to JobTracker get_track()
-        return self.point_list
+        return point_list
+
+    def get_csv_data(self, csv_file, date):
+        """Generate a point list from  .csv formatted (.log) file,
+        correcting for clock-change idiocy"""
+        pointID = 0
+        point_list = []
+        course = 0
+        speed = 0
+        with open(csv_file, 'rt') as log:
+            reader = csv.reader(log)
+            for row in reader:
+                time = row[0]
+                # Prepend a 0 before 10:00
+                if len(time) == 7:
+                    time = '0' + time
+                # insert a colon as expected by TimeConverter
+                hr = time[0:2]
+                mins = time[2:4]
+                time = hr + ':' + mins
+                # Adjust for local time
+                hrs_mins = time[0:5]
+                time = TC.get_time_mins(self, hrs_mins)
+                offset = self.get_local_time(date)
+                if offset != '0':
+                    time = time + (int(offset) * 60)
+                lat = row[1]
+                lat = Decimal(lat)
+                lat = round(lat, 4)
+                lon = row[2]
+                lon = Decimal(lon)
+                lon = round(lon, 4)
+                alt = row[3]
+                sats = row[4]
+                ram = row[5]
+                if len(row) >= 7:
+                    course = row[6]
+                if len(row) >= 8:
+                    speed = row[7]
+                a_point = TrackPoint(pointID, time, lat, lon, course, speed,
+                                     alt)
+                point_list.append(a_point)
+                pointID += 1
+        return point_list
+
+    def get_local_time(self, date):
+        """Get the timezone offset - hours to add to UTC"""
+        year = int(date[0:4])
+        month = int(date[4:6])
+        day = int(date[6:8])
+        d = [year, month, day]
+        wet = pytz.timezone('Europe/London')
+        date_time = datetime(year, month, day)
+        timezone_offset = wet.utcoffset(date_time)
+        timezone_offset = str(timezone_offset)
+        timezone_offset = timezone_offset[0]
+        return timezone_offset
 
     def bisect(self, time_list, start):
         """ Compares the parent.time_slider slider setting with
@@ -90,8 +98,26 @@ class GpsAnalyser():
         pos = bisect_left(time_list, sel_time)
         before = time_list[pos - 1]
         after = time_list[pos]
+
+        before2 = time_list[pos - 2]
+        print(before2, ' ', before, ' ', after)
+        # TODO Get point IDs?
         # return to JobTracker get_curr_time()
         return before, after, start
+
+    def get_next(self, time_list):
+        pos_list = []
+        sel_time = self.parent.ui.time_slider.value()
+        pos = bisect_left(time_list, sel_time)
+        print('sel_time', sel_time)
+        print('pos', pos)
+        n = 1
+        while n <= 5:
+            before = time_list[pos - n]
+            pos_list.append(before)
+            n += 1
+        print(pos_list)
+
 
     def get_coords(self, before, after, start):
         """ Gets coordinates for before/after pair.
@@ -130,12 +156,72 @@ class GpsAnalyser():
 
     def bearing(self, latitude_1, longitude_1, latitude_2, longitude_2):
         """Calculation of direction between two geographical points"""
-        rlat1 = radians(latitude_1)
-        rlat2 = radians(latitude_2)
-        rlon1 = radians(longitude_1)
-        rlon2 = radians(longitude_2)
+        rlat1 = radians(float(latitude_1))
+        rlat2 = radians(float(latitude_2))
+        rlon1 = radians(float(longitude_1))
+        rlon2 = radians(float(longitude_2))
         drlon = rlon2 - rlon1
         b = atan2(sin(drlon) * cos(rlat2), cos(rlat1) * sin(rlat2) -
                   sin(rlat1) * cos(rlat2) * cos(drlon))
         return (degrees(b) + 360) % 360
 
+    def get_gpx_data(self, log_file):
+        """For legacy data"""
+        pointID = 0
+        point_list = []
+        if os.path.isfile(log_file):
+            tree = ET.parse(log_file)
+            root = tree.getroot()
+            name_space = root.tag[:-3]
+            for child in root:
+                if child.tag == name_space + 'time':
+                    date = child.text
+                if child.tag == name_space + 'wpt':
+                    for item in child:
+                        if item.tag == name_space + 'name':
+                            jobID = item.text
+                if child.tag == name_space + 'trk':
+                    trackSeg = child[0]
+                    # Find local time offset:
+                    year = int(date[0:4])
+                    month = int(date[5:7])
+                    day = int(date[8:10])
+                    hour = int(date[11:13])
+                    mins = int(date[14:16])
+                    secs = int(date[17:19])
+                    wet = pytz.timezone('Europe/London')
+                    date_time = datetime(year, month, day, hour, mins,
+                                                  secs)
+                    timezone_offset = wet.utcoffset(date_time)
+                    timezone_offset = str(timezone_offset)
+                    timezone_offset = timezone_offset[0]
+                    for trackPnt in trackSeg:
+                        if trackPnt.tag == name_space + 'trkpt':
+                            lat = trackPnt.attrib['lat']
+                            lat = Decimal(lat)
+                            lat = round(lat, 4)
+                            lon = trackPnt.attrib['lon']
+                            lon = Decimal(lon)
+                            lon = round(lon, 4)
+                        # Adjust for local time
+                        for item in trackPnt.iter():
+                            if item.tag == name_space + 'time':
+                                time = item.text
+                                time = time[11:16]
+                                time = TC.get_time_mins(self, time)
+                                if timezone_offset != '0':
+                                    # Add offset +60 because of phone weirdness
+                                    time = time + (int(timezone_offset) * 60) \
+                                           + 60
+                            if item.tag == name_space + 'course':
+                                course = item.text
+                            if item.tag == name_space + 'speed':
+                                speed = item.text
+                            if item.tag == name_space + 'ele':
+                                height = item.text
+                        a_point = TrackPoint(pointID, time, lat, lon, course,
+                                             speed, height)
+                        point_list.append(a_point)
+                        pointID += 1
+        # return to JobTracker get_track()
+        return point_list
