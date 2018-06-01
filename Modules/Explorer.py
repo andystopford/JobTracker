@@ -444,15 +444,17 @@ class Explorer(QtGui.QMainWindow):
     def delete_file(self):
         sel_files = self.ui.file_lister.selectedItems()
         for f in sel_files:
+            row = self.ui.file_lister.row(f)
             entry = f.text()
             name = entry.split(" ")
-        handshake = '<' + 'D' + name[0] + '>'  # Key word to instruct Arduino
-        msg = handshake.encode('ascii')
-        # print('msg', msg)
-        self.ser.write(msg)
-        self.ui.info_display.append(name[0] + ' Deleted')
-        self.ui.file_lister.clear()
-        self.read_file_list()
+            handshake = '<' + 'D' + name[0] + '>'
+            msg = handshake.encode('ascii')
+            # print('msg', msg)
+            self.ser.write(msg)
+            self.ui.file_lister.takeItem(row)
+            self.ui.info_display.append(name[0] + ' Deleted')
+
+
 
     def close_serial(self):
         self.ser.close()

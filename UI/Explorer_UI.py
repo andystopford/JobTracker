@@ -37,6 +37,9 @@ class Explorer_Ui(object):
         self.download_button = QtGui.QPushButton('Download File')
         self.delete_button = QtGui.QPushButton('Delete File')
         self.file_lister = QtGui.QListWidget()
+        self.file_lister.setSelectionMode(QtGui.QAbstractItemView.
+                                          ExtendedSelection)
+        self.file_lister.setSortingEnabled(True)
         self.info_display = QtGui.QTextEdit()
 
         self.tabWidget = QtGui.QTabWidget()

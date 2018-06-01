@@ -93,7 +93,7 @@ QComboBox QAbstractItemView
     background-color: #42464a;
     border-radius: 2px;
     border: 1px solid #333d3f;
-    selection-background-color: #5500ff;
+    selection-background-color: #7c89ff;
 }
 
 
@@ -160,7 +160,8 @@ QLineEdit:focus, QLineEdit:hover
 
 QListWidget
 {
-    selection-background-color: rgb(255,0,0);
+    /*selection-color: red;*/
+    /*selection-background-color: #8c00ff;*/
 }
 
 QMenu
@@ -242,6 +243,22 @@ QPushButton:pressed
     background-color: #5500ff;
     padding-top: -15px;
     padding-bottom: -17px;
+}
+
+QRadioButton::indicator {
+    width: 10px;
+    height:  10px;
+    border-radius:  7px;
+}
+
+QRadioButton::indicator:checked {
+    background-color: #7c89ff;
+    border: 2px solid #4c5b5e;
+}
+
+QRadioButton::indicator:unchecked {
+    background-color: black;
+    border: 2px solid #4c5b5e;
 }
 
 QScrollBar:vertical
@@ -362,7 +379,7 @@ QTableCornerButton
 
 QTableView
 {
-    selection-background-color: #5500ff;
+    selection-background-color: #8c00ff;
 }
 
 QTextEdit
@@ -379,4 +396,3 @@ QTextEdit:focus, QTextEdit:hover
 {
     border: 1px solid #5500ff;
 }
-

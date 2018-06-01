@@ -1,6 +1,7 @@
 import csv
 import xml.etree.ElementTree as ET
 from bisect import bisect_left  # For getting closest numbers in list
+from bisect import bisect_right
 from datetime import datetime
 from decimal import Decimal
 from math import *
@@ -95,29 +96,26 @@ class GpsAnalyser:
         point_list to find the nearest point times before
         and after """
         sel_time = self.parent.ui.time_slider.value()
-        pos = bisect_left(time_list, sel_time)
+        pos = bisect_left(time_list, sel_time)  # index of closest
         before = time_list[pos - 1]
         after = time_list[pos]
-
-        before2 = time_list[pos - 2]
-        print(before2, ' ', before, ' ', after)
         # TODO Get point IDs?
         # return to JobTracker get_curr_time()
         return before, after, start
 
-    def get_next(self, time_list):
-        pos_list = []
+    def get_trail_points(self, time_list):
+        """Get before and after points for selected (slider) time to
+        enable coloured follower for time marker.
+        """
+        trail_range = self.parent.ui.range_slider.getValues()
+        bef = abs(int(trail_range[0]))
+        aft = int(trail_range[1])
         sel_time = self.parent.ui.time_slider.value()
-        pos = bisect_left(time_list, sel_time)
-        print('sel_time', sel_time)
-        print('pos', pos)
-        n = 1
-        while n <= 5:
-            before = time_list[pos - n]
-            pos_list.append(before)
-            n += 1
-        print(pos_list)
-
+        now = bisect_right(time_list, sel_time)  # index of closest
+        # Select range of points
+        before_points = self.parent.point_list[now - bef:now]
+        after_points = self.parent.point_list[now - 1:now + aft]
+        return before_points, after_points
 
     def get_coords(self, before, after, start):
         """ Gets coordinates for before/after pair.
@@ -126,11 +124,9 @@ class GpsAnalyser:
             if point.time - start == before:
                 bef_lat = point.lat
                 bef_lon = point.lon
-                bef_time = point.time
             if point.time - start == after:
                 aft_lat = point.lat
                 aft_lon = point.lon
-                aft_time = point.time
         sel_time = self.parent.ui.time_slider.value()
         leg_len = after - before
         leg_time = sel_time - before

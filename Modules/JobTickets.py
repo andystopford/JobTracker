@@ -21,6 +21,9 @@ class JobTickets(QtGui.QListWidget):
         self.parent.load_tracks()
         self.parent.enable_day()
         self.parent.display_job()
+        # font = QtGui.QFont()
+        # font.setBold(True)
+        # e.setFont(font)
 
     def rename_ticket(self, item):
         """If lamda is not used, self.ticket_changed(item_name) will be

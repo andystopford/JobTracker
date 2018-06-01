@@ -47,3 +47,5 @@ class TrackTable(QtGui.QTableView):
         row = index.row()
         self.parent.trackModel.removeRow(row)
         # TODO clear tracks from map
+
+

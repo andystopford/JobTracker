@@ -11,6 +11,7 @@ from ExpensesTable import*
 from PaymentTable import*
 from JobTickets import*
 import DarkStyle
+from RangeSlider import QHRangeSlider
 
 try:
     _fromUtf8 = QtCore.QString.fromUtf8
@@ -32,7 +33,7 @@ class Ui_mainWindow(object):
         self.button_save = QtGui.QPushButton("Save")
         self.button_back = QtGui.QPushButton("<<")
         self.button_forward = QtGui.QPushButton(">>")
-        self.button_test = QtGui.QPushButton("Test")
+        self.button_explore = QtGui.QPushButton("Explorer")
         self.filter_box = QtGui.QComboBox()
         self.label_year = QtGui.QLabel()
         self.coord_display = QtGui.QLabel('test')
@@ -52,6 +53,9 @@ class Ui_mainWindow(object):
         self.button_track_cols = QtGui.QPushButton("Track Colours")
         self.button_track_cols.setMenu(self.menu_track_cols)
         self.button_rev_cols = QtGui.QPushButton("Reverse")
+
+        self.range_slider = QHRangeSlider()
+
         self.from_display = QtGui.QTextEdit()
         self.time_display = QtGui.QTextEdit()
         self.to_display = QtGui.QTextEdit()
@@ -153,8 +157,7 @@ class Ui_mainWindow(object):
         top_button_widget = QtGui.QWidget()
         top_button_layout = QtGui.QHBoxLayout()
         top_button_widget.setLayout(top_button_layout)
-        #top_button_layout.addWidget(self.filter_box)
-        top_button_layout.addWidget(self.button_test)
+        top_button_layout.addWidget(self.button_explore)
         top_button_layout.addWidget(self.button_back)
         top_button_layout.addWidget(self.label_year)
         top_button_layout.addWidget(self.button_forward)
@@ -202,6 +205,15 @@ class Ui_mainWindow(object):
         map_ctrl_box_layout.addWidget(track_table_group)
         track_ctrl_layout = QtGui.QGridLayout()
         track_table_layout.addLayout(track_ctrl_layout)
+
+        slider_group = QtGui.QGroupBox('Tracker Range')
+        slider_group.setMaximumHeight(80)
+        slider_layout = QtGui.QGridLayout()
+        slider_group.setLayout(slider_layout)
+        slider_layout.addWidget(self.range_slider, 0, 0)
+
+        self.range_slider.setFixedHeight(30)
+        map_ctrl_box_layout.addWidget(slider_group)
 
         start_fin_group = QtGui.QGroupBox('Timeline')
         start_fin_group.setMaximumHeight(80)

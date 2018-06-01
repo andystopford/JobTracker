@@ -1,8 +1,8 @@
-import os.path
 import shutil
 import sys
 import xml.etree.ElementTree as ET
 
+import os.path
 from PyQt4 import QtGui
 
 sys.path.append("./Modules")
@@ -23,6 +23,8 @@ class DataIO:
     def get_gpx(self):
         """Copies .gpx files from Dropbox to ./Logs directory"""
         # TODO Implement path Prefs in Explorer
+        print('Module IO.get_gpx() disconnected')
+        return
         source_path = '/home/andy/Dropbox/Apps/GPSLogger for Android/'
         source = os.listdir(source_path)
         for gpx_file in source:
@@ -47,7 +49,6 @@ class DataIO:
         """Open user data"""
         try:
             path = self.user_path
-            print(path + 'years.xml')
             with open(path + 'years.xml', "r") as fo:
                 tree = ET.parse(fo)
                 root = tree.getroot()

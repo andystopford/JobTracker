@@ -1,5 +1,6 @@
 from TimeConverter import*
 
+
 class TimeLine:
     def __init__(self, parent):
         """Don't confuse with time_slider which is a QSlider control.

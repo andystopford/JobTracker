@@ -2,6 +2,7 @@ import json
 import sys
 
 import matplotlib.cm as cm
+import matplotlib.colors
 from PostcodesIO import PostcodeIO
 from PyQt4 import QtCore, QtWebKit
 
@@ -42,12 +43,12 @@ class MapView(QtWebKit.QWebView):
         """Load Mapbox Satellite images"""
         self.frame.evaluateJavaScript('add_sat();')
 
-
     def clear_map(self):
         """Removes previously drawn tracks and markers"""
         home = [51.1595954895, 0.260109901428]
         self.frame.evaluateJavaScript('clear_tracks();')
         self.frame.evaluateJavaScript('clear_layer_grp();')
+        self.frame.evaluateJavaScript('clear_followers();')
         self.frame.evaluateJavaScript('clear_waypoints();')
         self.frame.evaluateJavaScript('move({}, {});'.format(home[0], home[1]))
 
@@ -70,6 +71,47 @@ class MapView(QtWebKit.QWebView):
                 lon = str(item.get_lon())
                 place_list.append([lat, lon])
             self.frame.evaluateJavaScript('add_track({}, {});'.
+                                          format(place_list, colour))
+
+    def hide_track(self):
+        # TODO
+        return
+
+    def get_trail_pairs(self, before_points, after_points):
+        """Breaks point lists into pairs and assigns colours for before
+        and after trails"""
+        self.frame.evaluateJavaScript('clear_followers();')
+        b_pair_list = []
+        a_pair_list = []
+        bef_cols = ["#ff7e7e", "red"]
+        aft_cols = ["blue", "#c2c0ff"]
+        cmap_before = matplotlib.colors.LinearSegmentedColormap.from_list\
+            ("", bef_cols)
+        cmap_after = matplotlib.colors.LinearSegmentedColormap.from_list\
+            ("", aft_cols)
+
+        b_pairs = [before_points[i:i + 2] for i in
+                   range(0, len(before_points), 1)]
+        a_pairs = [after_points[i:i + 2] for i in
+                   range(0, len(after_points), 1)]
+        self.draw_trail(b_pairs, b_pair_list, cmap_before)
+        self.draw_trail(a_pairs, a_pair_list, cmap_after)
+
+    def draw_trail(self, pairs, pair_list, cmap):
+        """Draw a polyline for before and after trails"""
+        for pair in pairs:
+            # Pairs of TrackPoints
+            pair_list.append(pair)
+        for i, pair in enumerate(pair_list):
+            colour = cmap(i/len(pair_list))
+            # Convert to Hex:
+            colour = self.convert_colour(colour)
+            place_list = []
+            for item in pair:
+                lat = str(item.get_lat())
+                lon = str(item.get_lon())
+                place_list.append([lat, lon])
+            self.frame.evaluateJavaScript('add_solid_track({}, {});'.
                                           format(place_list, colour))
 
     def draw_waypoints(self, point_list):
@@ -119,6 +161,8 @@ class MapView(QtWebKit.QWebView):
             self.draw_end(time_events[-1])
 
     def add_segment(self, leg_points, col=None):
+        """block is time_block in JT.py and provides model row to segment
+        identifier"""
         place_list = []
         colour_list = ['#fda07f', '#cd82f2', '#7fd4fd', '#8bf282', '#fde083']
         if not col:
@@ -130,13 +174,18 @@ class MapView(QtWebKit.QWebView):
             lat = str(item.get_lat())
             lon = str(item.get_lon())
             place_list.append([lat, lon])
-        self.frame.evaluateJavaScript('add_segment({}, {});'.format(place_list,
-                                                                    colour))
+        self.frame.evaluateJavaScript('add_segment({}, {});'.format
+                                      (place_list, colour))
         if self.colour_index < 4:
             self.colour_index += 1
         else:
             self.colour_index = 0
         return curr_colour
+
+    def remove_segment(self, block):
+        print('MapView, line 186', block)
+        x = self.frame.evaluateJavaScript('hide_segment({});'.format(block))
+        print('MapView, line 188', x)
 
     def draw_start(self, start, time):
         start_lat = start[0]

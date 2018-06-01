@@ -134,6 +134,19 @@ function clear_waypoints() {
     waypoint_grp.clearLayers()
     }
 
+// Draw follower track
+var follower_grp = L.layerGroup().addTo(map);
+
+function add_solid_track(latlngs, colour) {
+    follower_layer = L.polyline({color: 'red'})
+    follower_layer.setLatLngs([latlngs])
+    follower_layer.setStyle({color: colour, weight: 4})
+    follower_grp.addLayer(follower_layer)
+    }
+
+function clear_followers() {
+    follower_grp.clearLayers()
+    }
 ////////////////////////////////////////////////////////////
 // Layer group for start/finish markers
 var grp = L.layerGroup().addTo(map);
@@ -168,11 +181,24 @@ function move(lat, lng) {
 
 ///////////////////////////////////////////////////////////
 // Segments
+var segments = [];
+
 function add_segment(latlngs, colour) {
-    segment_layer = L.polyline({color: '000000'});
-    grp.addLayer(segment_layer)
-    segment_layer.setLatLngs([latlngs]);
-    segment_layer.setStyle({color: colour});
+    seg = L.polyline({color: '000000'});
+    grp.addLayer(seg)
+    seg.setLatLngs([latlngs]);
+    seg.setStyle({color: colour});
+    }
+
+function hide_segment(block) {
+    // Is block name out of scope?
+    if (map.haslayer(block)) {
+    return 'ok1';
+    //grp.removeLayer(block)
+    } else {
+    //grp.removeLayer(block)
+    return 'ok2';
+    }
     }
 /////////////////////////////////////////////////////////////
 // start and end markers

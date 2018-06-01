@@ -10,7 +10,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, see <http://www.gnu.org/licenses/>.
 #
-# JobTracker version 2.3.0  17/05/18
+# JobTracker version 2.3.1  01/06/18
 #######################################################################
 import sys
 sys.path.append("./Modules")
@@ -42,7 +42,7 @@ class MainWindow(QtGui.QMainWindow):
         QtGui.QWidget.__init__(self, parent)
         self.ui = Ui_mainWindow()
         self.ui.setup_ui(self)
-        self.setWindowTitle("JobTracker 2.1")
+        self.setWindowTitle("JobTracker 2.3")
         self.setWindowIcon(QtGui.QIcon('./Icons/shackles.png'))
         self.setStyleSheet(DarkStyle.load_stylesheet())
 
@@ -66,7 +66,7 @@ class MainWindow(QtGui.QMainWindow):
         self.key_list = []  # temp store for model_dict keys
         self.point_list = []
         self.dirty = False
-        self.time_block = 1  # For map marker popups
+        self.time_block = 0  # For identifying track segments
         self.selected_indices = []
         today = date.today()
         self.year = today.year
@@ -74,11 +74,12 @@ class MainWindow(QtGui.QMainWindow):
         self.startup()
 
         # Signals
-        self.ui.button_test.clicked.connect(self.test)
+        self.ui.button_explore.clicked.connect(self.explorer.show)
         self.ui.button_back.clicked.connect(self.year_back)
         self.ui.button_forward.clicked.connect(self.year_forward)
         self.ui.button_save.clicked.connect(self.save)
         self.ui.time_slider.valueChanged.connect(self.get_curr_time)
+        self.ui.range_slider.rangeChanged.connect(self.set_range)
         self.ui.button_map.toggled.connect \
             (lambda: self.select_map(self.ui.button_map))
         self.ui.button_terrain.toggled.connect \
@@ -193,10 +194,6 @@ class MainWindow(QtGui.QMainWindow):
         self.dateDisplay.setup(date_list, log_list)
         self.ui.job_name_box.setCompleter(Completer(self))
 
-    def test(self):
-        print('JobTracker.test()')
-        return
-
     def year_back(self):
         self.year -= 1
         self.clear_year()
@@ -225,6 +222,7 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.paymentTable.clear()
         self.trackModel.reset()
         self.point_list = []
+        self.time_block = 0
         self.disable_day()
         return
 
@@ -240,8 +238,13 @@ class MainWindow(QtGui.QMainWindow):
             if b.isChecked():
                 self.ui.mapView.sat_map()
 
+    def set_range(self):
+        """Triggered by change of tracker range"""
+        time = self.ui.time_slider.value()
+        self.get_curr_time(time)
+
     def get_curr_time(self, time):
-        """Displays time slider current value and gets tracker
+        """Displays time slider current value, gets tracker
         coordinates"""
         gpsAnalyser = GpsAnalyser(self)
         display = self.timeLine.get_curr_time(time, self.point_list)
@@ -250,10 +253,12 @@ class MainWindow(QtGui.QMainWindow):
         bisect = gpsAnalyser.bisect(display[1], display[2])
         coords = gpsAnalyser.get_coords(bisect[0], bisect[1], bisect[2])
         posn = gpsAnalyser.find_posn(coords)
+        # posn = [dest.latitude, dest.longitude, bearing, distance]
         self.ui.mapView.draw_tracker(posn)
+        # Set up points for tracker trails
+        trail_points = gpsAnalyser.get_trail_points(display[1])
+        self.ui.mapView.get_trail_pairs(trail_points[0], trail_points[1])
         self.timeLine.set_time_posn(posn[0], posn[1])
-
-        #gpsAnalyser.get_next(display[1])
 
     def select_date(self, indices):
         """Load tickets from selected date"""
@@ -266,7 +271,6 @@ class MainWindow(QtGui.QMainWindow):
         self.model.set_year(self.year, False)
         self.selected_indices = indices
         self.timeLine.zero_time_list()
-
         self.get_track(date)
         self.display_tickets()
         self.ui.jobTickets.clearSelection()
@@ -277,7 +281,6 @@ class MainWindow(QtGui.QMainWindow):
         date = date.toString(1)
         date = date.replace('-', '')
         gpsAnalyser = GpsAnalyser(self)
-        # log_file = gpsAnalyser.get_log_file('090518.log')
         self.point_list = gpsAnalyser.get_data(date)
         self.ui.mapView.draw_track(self.point_list)
         self.ui.mapView.draw_waypoints(self.point_list)
@@ -322,11 +325,17 @@ class MainWindow(QtGui.QMainWindow):
         end = time_events[1]
         hours = time_events[2]
         time_list = [start, end, hours, miles]
+        # Create QStdItems
         for i, item in enumerate(time_list):
             time_list[i] = QtGui.QStandardItem(item)
+        chk_box = QtGui.QStandardItem()
+        chk_box.setCheckable(True)
+        chk_box.setCheckState(QtCore.Qt.Checked)
+        time_list.append(chk_box)
+        # Append track to model
         self.trackModel.appendRow(time_list)
         self.trackModel.setHorizontalHeaderLabels(['Start', 'End', 'Hours',
-                                                   'Miles'])
+                                                   'Miles', 'Show'])
         self.time_block += 1
         self.colour_cells(segment[1])
 
@@ -408,6 +417,7 @@ class MainWindow(QtGui.QMainWindow):
 
     def load_tracks(self):
         """Loads previously saved tracks into mapView"""
+        # TODO should be combined with track_segment
         tracks = self.ui.hoursTable.load_tracks()
         for item in tracks:
             track_seg = self.track_segment(item[0], item[1], item[2])
@@ -416,12 +426,14 @@ class MainWindow(QtGui.QMainWindow):
     # GPS Tracks ##############################################
 
     def track_segment(self, start, end, col=None):
-        """Selects the trackpoints between the specified times"""
+        """Selects the trackpoints between the specified times and sends
+        segment to mapView"""
         leg_points = []
         for point in self.point_list:
             if point.time >= start:
                 if point.time <= end:
                     leg_points.append(point)
+        # Do the next bit elsewhere:
         if col:
             # Colours of previously saved tracks
             colour = self.ui.mapView.add_segment(leg_points, col)
@@ -429,12 +441,15 @@ class MainWindow(QtGui.QMainWindow):
             colour = self.ui.mapView.add_segment(leg_points)
         return leg_points, colour
 
+    def remove_segment(self, block):
+        self.ui.mapView.remove_segment(block)
+
     def colour_cells(self, colour):
         """Colour rows in TrackTable"""
         row = self.trackModel.rowCount() - 1
         col = QtGui.QColor()
         col.setNamedColor(colour)
-        for i in range(4):
+        for i in range(5):
             cell = self.trackModel.item(row, i)
             cell.setBackground(col)
             cell.setForeground(QtGui.QColor('#1d1e1f'))
