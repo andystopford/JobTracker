@@ -317,60 +317,55 @@ class Explorer(QtGui.QMainWindow):
     def open_serial(self):
         """Get list of serial ports, check if tracker is connected and
                 send handshake message"""
+        # If problems with permission denied for USB port, try
+        # sudo chmod 777 /dev/ttyUSB*
         ports = list(serial.tools.list_ports.comports())
         for p in ports:
             if 'CP2102 USB to UART' in p[1]:
                 port = p[0]
-                # print(port)
+            else:
+                self.ui.info_display.append('No serial port found')
         self.ser = serial.Serial(port)
         self.ser.baudrate = 9600
         self.ser.timeout = 1
         if self.ser.isOpen:
             self.ser.close()
         self.ser.open()
-        # self.ser.write(00)  # wake it up
+        self.ser.write(00)  # wake it up
         msg = 'Opening ' + self.ser.name
-        self.ui.info_display.setText(msg)
+        self.ui.info_display.append(msg)
         self.hello()
 
     def hello(self):
         """Handshake to to tell tracker to upload list of files on sd card"""
-        # print('Reading Serial')
         handshake = '<' + 'hello' + '>'  # Key word to instruct Arduino
         msg = handshake.encode('ascii')
-        # print('handshake', msg)
         self.ser.write(msg)
         self.read_file_list()
 
     def read_file_list(self):
-        """Makes three attempts to read uploaded file list"""
-        data_list = []
+        """Makes three attempts to download file list"""
         data = self.ser.readline().strip()
+        print(data)
         count = 0
         while len(data) == 0:
             if count < 3:
-                print('blank received')
+                #self.ui.info_display.append('No data received')
                 count += 1
                 data = self.ser.readline().strip()
             else:
-                print('Giving up')
-                data_list = []
-                #self.hello()
-                #self.close_serial()
+                self.ui.info_display.append('Giving up')
                 break
         while data:
             if len(data) > 0:
-                #print('data', data)
+                #self.ui.info_display.append('Receiving data')
                 text = data.decode('ascii')
                 text = text.strip()
-                self.write_file_list(text)
-                if len(text) > 0:
-                    data_list.append(text)
-                if data == b'\r':
-                    break
+                if len(text) > 9:
+                    if text[5] == '.':
+                        text = '0' + text
+                    self.write_file_list(text)
                 data = self.ser.readline()
-        #print('======================')
-        #print('data_list', data_list)
 
     def write_file_list(self, fname):
         file_item = QtGui.QListWidgetItem()
@@ -378,68 +373,62 @@ class Explorer(QtGui.QMainWindow):
         self.ui.file_lister.addItem(file_item)
 
     def download_sel(self):
-        """Handshake to instruct tracker to upload selected file"""
-        # print('Reading Log2')
+        """Handshake to instruct tracker to upload selected file. Allows for
+        names (in the GUI list) which begin with 0"""
         sel_files = self.ui.file_lister.selectedItems()
         for f in sel_files:
             entry = f.text()
             name = entry.split(" ")
-            handshake = '<' + name[0] + '>'  # Key word to instruct Arduino
+            name = name[0]
+            if name[0] == '0':
+                name = name[1:]
+            handshake = '<' + name + '>'  # Key word to instruct Arduino
             msg = handshake.encode('ascii')
-            #print('msg', msg)
             self.ser.write(msg)
-            # self.read_sd()
-            self.read(name[0])
+            self.read(name)
 
     def read(self, name):
-        """Makes three attempts to read uploaded file"""
-        data_list = []
-        data = self.ser.readline()
-        count = 0
+        """Makes three attempts to read from serial. If data is received, data
+        is decoded line by line and appended to data_list. On completion of
+        serial transmission the list of fixes is written to disc."""
         if len(name) == 9:
             name = '0' + name
         y = str('20' + name[4:6])
         m = str(name[2:4])
         d = str(name[0:2])
         name = y + m + d + '.log'
+        data_list = []
+        data = self.ser.readline()
+        count = 0      
         while len(data) == 0:
             if count < 3:
-                print('blank received')
-                self.ui.info_display.append('Blank received')
+                self.ui.info_display.append('Nothing received')
                 count += 1
             else:
-                print('Giving up')
                 self.ui.info_display.append('Giving up')
                 break
             data = self.ser.readline()
         while data:
-            #print(data)
             if len(data) > 0:
                 text = data.decode('ascii')
                 text = text.strip()
-                # text = text.replace("/", ",")
-                print(text)
                 self.ui.info_display.append(text)
+                self.ui.info_display.moveCursor(QtGui.QTextCursor.End)
+                QtGui.QApplication.processEvents()  # Let it process GUI events
                 if len(text) > 0:
                     data_list.append([text])
-                    #print('text', text)
                 if data == b'\r':
-                    print('end')
                     break
             data = self.ser.readline()
-        print('======================')
-        print('data', data_list)
         if len(data_list) > 0:
             d = os.path.dirname(os.getcwd())  # Get path to parent directory
             log_path = d + '/JobTracker2/Logs/'
             writer = csv.writer(open(log_path + name, 'w+'), delimiter="/")
             for row in data_list:
                 writer.writerow(row)
-            print('Write complete')
             self.ui.info_display.append('Write complete')
         else:
-            print('No data written')
-            self.ui.info_display.append('No data written')
+            self.ui.info_display.append('No data to write')
 
     def delete_file(self):
         sel_files = self.ui.file_lister.selectedItems()
@@ -447,18 +436,14 @@ class Explorer(QtGui.QMainWindow):
             row = self.ui.file_lister.row(f)
             entry = f.text()
             name = entry.split(" ")
-            handshake = '<' + 'D' + name[0] + '>'
+            name = name[0]
+            if name[0] == '0':
+                name = name[1:]
+            handshake = '<' + 'D' + name + '>'
             msg = handshake.encode('ascii')
-            # print('msg', msg)
             self.ser.write(msg)
             self.ui.file_lister.takeItem(row)
-            self.ui.info_display.append(name[0] + ' Deleted')
-
-
-
-    def close_serial(self):
-        self.ser.close()
-        print('Serial closed')
+            self.ui.info_display.append(name + ' Deleted')
 
 
 ###############################################################################

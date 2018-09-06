@@ -65,8 +65,8 @@ var routeControl = L.Routing.control(  {
     units: 'imperial',
     collapsible: true,
     //geocoder: L.Control.Geocoder.nominatim()
-    //router: L.Routing.mapbox('pk.eyJ1IjoiYW5keXN0b3BwcyIsImEiOiJjaXUwN2J4anEwMDAxMzNrZTQxeTVpeGx1In0.BqZQL3MpuDI5kPi0LvZhkQ'),
-    geocoder: L.Control.Geocoder.photon()
+    router: L.Routing.mapbox('pk.eyJ1IjoiYW5keXN0b3BwcyIsImEiOiJjaXUwN2J4anEwMDAxMzNrZTQxeTVpeGx1In0.BqZQL3MpuDI5kPi0LvZhkQ'),
+    //geocoder: L.Control.Geocoder.photon()
     })
     .addTo(map);
 

@@ -13,8 +13,7 @@ class Timer:
         be used."""
         self.parent = parent
         self.qTimer = QtCore.QTimer()
-        QtCore.QObject.connect(self.qTimer, QtCore.SIGNAL("timeout()"), 
-                               self.display_time)
+        self.qTimer.timeout.connect(self.display_time)
         self.total_time = 0
         self.start = 0
         self.ticket_list = []
@@ -84,6 +83,7 @@ class Timer:
         self.total_time += elapsed
         # divide by sixty to get minutes - comment out for testing
         #minutes = int(self.total_time/60)
+        # Comment out next if not testing
         minutes = self.total_time
         disp_time = TimeConverter.get_time_hrs_mins(self, minutes)
         self.parent.ui.time_total.setText(disp_time)

@@ -66,7 +66,6 @@ class MainWindow(QtGui.QMainWindow):
         self.key_list = []  # temp store for model_dict keys
         self.point_list = []
         self.dirty = False
-        self.time_block = 0  # For identifying track segments
         self.selected_indices = []
         today = date.today()
         self.year = today.year
@@ -312,7 +311,8 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.mapView.marker_calc(time_events[0], time_events[3])
         # If we have a start and finish time:
         if len(time_events[3]) == 2:
-            self.add_times(time_events)
+            # self.add_times(time_events)
+            self.trackModel.enter_track(time_events)
 
     def add_times(self, time_events):
         """Displays selected track segment in self.ui.trackTable"""
@@ -336,7 +336,6 @@ class MainWindow(QtGui.QMainWindow):
         self.trackModel.appendRow(time_list)
         self.trackModel.setHorizontalHeaderLabels(['Start', 'End', 'Hours',
                                                    'Miles', 'Show'])
-        self.time_block += 1
         self.colour_cells(segment[1])
 
     def get_day(self):
@@ -417,11 +416,9 @@ class MainWindow(QtGui.QMainWindow):
 
     def load_tracks(self):
         """Loads previously saved tracks into mapView"""
-        # TODO should be combined with track_segment
         tracks = self.ui.hoursTable.load_tracks()
-        for item in tracks:
-            track_seg = self.track_segment(item[0], item[1], item[2])
-            self.ui.mapView.add_segment(track_seg[0], track_seg[1])
+        for track in tracks:
+            self.track_segment(track[0], track[1], track[2])
 
     # GPS Tracks ##############################################
 

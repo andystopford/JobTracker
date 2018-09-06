@@ -1,6 +1,7 @@
-from ExpensesTable import *
-from HoursTable import *
+#from ExpensesTable import *
+#from HoursTable import *
 from PyQt4 import QtGui
+#from InfoDisplay import*
 
 
 class Explorer_Ui(object):

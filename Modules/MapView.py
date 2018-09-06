@@ -161,8 +161,7 @@ class MapView(QtWebKit.QWebView):
             self.draw_end(time_events[-1])
 
     def add_segment(self, leg_points, col=None):
-        """block is time_block in JT.py and provides model row to segment
-        identifier"""
+        """"""
         place_list = []
         colour_list = ['#fda07f', '#cd82f2', '#7fd4fd', '#8bf282', '#fde083']
         if not col:

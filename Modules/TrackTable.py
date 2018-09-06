@@ -49,3 +49,5 @@ class TrackTable(QtGui.QTableView):
         # TODO clear tracks from map
 
 
+
+

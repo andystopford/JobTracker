@@ -40,8 +40,8 @@ class GpsAnalyser:
         correcting for clock-change idiocy"""
         pointID = 0
         point_list = []
-        course = 0
-        speed = 0
+        #course = 0
+        #speed = 0
         with open(csv_file, 'rt') as log:
             reader = csv.reader(log)
             for row in reader:
@@ -49,9 +49,9 @@ class GpsAnalyser:
                 # Prepend a 0 before 10:00
                 if len(time) == 7:
                     time = '0' + time
-                # insert a colon as expected by TimeConverter
                 hr = time[0:2]
                 mins = time[2:4]
+                # insert a colon as expected by TimeConverter
                 time = hr + ':' + mins
                 # Adjust for local time
                 hrs_mins = time[0:5]
@@ -65,15 +65,14 @@ class GpsAnalyser:
                 lon = row[2]
                 lon = Decimal(lon)
                 lon = round(lon, 4)
-                alt = row[3]
-                sats = row[4]
-                ram = row[5]
-                if len(row) >= 7:
-                    course = row[6]
-                if len(row) >= 8:
-                    speed = row[7]
-                a_point = TrackPoint(pointID, time, lat, lon, course, speed,
-                                     alt)
+                #ram = row[3]
+                #sats = row[4]
+                #ram = row[5]
+                #if len(row) >= 7:
+                #    course = row[6]
+                #if len(row) >= 8:
+                #    speed = row[7]
+                a_point = TrackPoint(pointID, time, lat, lon, 0, 0, 0)
                 point_list.append(a_point)
                 pointID += 1
         return point_list
