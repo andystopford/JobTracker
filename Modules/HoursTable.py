@@ -1,24 +1,24 @@
 from GpsAnalyser import*
-from PyQt4 import QtCore, QtGui
+from PyQt5 import QtCore, QtGui, QtWidgets
 from Ticket import Track
 from TimeConverter import*
 
 
-class HoursTable(QtGui.QTableWidget):
+class HoursTable(QtWidgets.QTableWidget):
     def __init__(self, parent):
         """Displays hours and ,optionally, GPS track hours/distances"""
-        super(HoursTable, self).__init__(parent)
-        self.setDragDropMode(QtGui.QAbstractItemView.DropOnly)
+        super().__init__(parent)
+        self.setDragDropMode(QtWidgets.QAbstractItemView.DropOnly)
         self.parent = parent
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-        self.connect(self, QtCore.SIGNAL("customContextMenuRequested"
-                                         "(QPoint)"), self.rclick_menu)
-        self.setSelectionMode(QtGui.QAbstractItemView.NoSelection)
+        #self.connect(self, QtCore.SIGNAL("customContextMenuRequested"
+        #                                "(QPoint)"), self.rclick_menu)
+        self.setSelectionMode(QtWidgets.QAbstractItemView.NoSelection)
 
-    def rclick_menu(self):
-        menu = QtGui.QMenu(self)
-        add = QtGui.QAction('Add', self)
-        delete = QtGui.QAction('Delete', self)
+    def contextMenuEvent(self, event):
+        menu = QtWidgets.QMenu(self)
+        add = QtWidgets.QAction('Add', self)
+        delete = QtWidgets.QAction('Delete', self)
         menu.addAction(add)
         menu.addAction(delete)
         menu.popup(QtGui.QCursor.pos())
@@ -62,25 +62,25 @@ class HoursTable(QtGui.QTableWidget):
             text_colour = QtGui.QColor('#1d1e1f')
             for track in track_list:
                 brush = track.get_brush()
-                start = QtGui.QTableWidgetItem(track.get_start())
+                start = QtWidgets.QTableWidgetItem(track.get_start())
                 start.setBackground(brush)
-                start.setTextColor(text_colour)
+                start.setForeground(text_colour)
                 self.setItem(row, 0, start)
-                end = QtGui.QTableWidgetItem(track.get_end())
+                end = QtWidgets.QTableWidgetItem(track.get_end())
                 end.setBackground(brush)
-                end.setTextColor(text_colour)
+                end.setForeground(text_colour)
                 self.setItem(row, 1, end)
-                hours = QtGui.QTableWidgetItem(track.get_hours())
+                hours = QtWidgets.QTableWidgetItem(track.get_hours())
                 hours.setBackground(brush)
-                hours.setTextColor(text_colour)
+                hours.setForeground(text_colour)
                 self.setItem(row, 2, hours)
-                miles = QtGui.QTableWidgetItem(track.get_miles())
+                miles = QtWidgets.QTableWidgetItem(track.get_miles())
                 miles.setBackground(brush)
-                miles.setTextColor(text_colour)
+                miles.setForeground(text_colour)
                 self.setItem(row, 3, miles)
-                notes = QtGui.QTableWidgetItem(track.get_notes())
+                notes = QtWidgets.QTableWidgetItem(track.get_notes())
                 notes.setBackground(brush)
-                notes.setTextColor(text_colour)
+                notes.setForeground(text_colour)
                 self.setItem(row, 4, notes)
                 row += 1
         self.total()
@@ -139,19 +139,19 @@ class HoursTable(QtGui.QTableWidget):
             hrs = tc.get_time_mins(hrs)
             total_hrs += hrs
         total_hrs = tc.get_time_hrs_mins(total_hrs)
-        total_hours = QtGui.QTableWidgetItem()
+        total_hours = QtWidgets.QTableWidgetItem()
         total_hours.setText(total_hrs)
         total_hours.setBackground(brush)
-        total_hours.setTextColor(text_colour)
+        total_hours.setForeground(text_colour)
         self.setItem(row_count - 1, 2, total_hours)
         for i in range(0, row_count - 1):
             miles = float(self.item(i, 3).text())
             total_miles += miles
         total_miles = '{0:.2f}'.format(total_miles)
-        total_dist = QtGui.QTableWidgetItem()
+        total_dist = QtWidgets.QTableWidgetItem()
         total_dist.setText(str(total_miles))
         total_dist.setBackground(brush)
-        total_dist.setTextColor(text_colour)
+        total_dist.setForeground(text_colour)
         self.setItem(row_count - 1, 3, total_dist)
 
     def load_tracks(self):

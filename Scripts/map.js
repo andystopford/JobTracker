@@ -20,6 +20,7 @@ function add_osm_map()   {
     map.removeLayer(sat_map)
     map.removeLayer(terrain_map)
     vector_map.addTo(map);
+    return 'ok'
     }
 
 function add_terr_map() {

@@ -16,7 +16,8 @@ import sys
 sys.path.append("./Modules")
 sys.path.append("./UI")
 sys.path.append("./Icons")
-from PyQt4 import QtCore, QtGui, Qt
+from PyQt5 import QtCore, QtGui, Qt, QtWidgets
+from PyQt5.QtWidgets import QWidget, QMainWindow
 from datetime import date
 from UI import Ui_mainWindow
 from IO import *
@@ -37,14 +38,14 @@ from WaitingSpinner import QtWaitingSpinner
 # from Ticket import Track
 
 
-class MainWindow(QtGui.QMainWindow):
+class MainWindow(QMainWindow):
     def __init__(self, parent=None):
-        QtGui.QWidget.__init__(self, parent)
+        QWidget.__init__(self, parent)
         self.ui = Ui_mainWindow()
         self.ui.setup_ui(self)
         self.setWindowTitle("JobTracker 2.3")
         self.setWindowIcon(QtGui.QIcon('./Icons/shackles.png'))
-        self.setStyleSheet(DarkStyle.load_stylesheet())
+        self.setStyleSheet(DarkStyle.load_stylesheet_pyqt5())
 
         ##################################################
         # Initialise
@@ -55,8 +56,9 @@ class MainWindow(QtGui.QMainWindow):
         self.spinner = QtWaitingSpinner(self.ui.spinner_widget)
         self.timer = Timer(self)
         self.model = None
-        self.table_proxy_model = QtGui.QSortFilterProxyModel()
-        self.ui.trackTable.setDragDropMode(QtGui.QAbstractItemView.DragOnly)
+        self.table_proxy_model = QtCore.QSortFilterProxyModel()
+        self.ui.trackTable.setDragDropMode(QtWidgets.QAbstractItemView.
+                                           DragOnly)
         self.ui.ticketNotes.installEventFilter(self)
         self.ui.expensesTable.installEventFilter(self)
         self.ui.job_name_box.installEventFilter(self)
@@ -141,6 +143,9 @@ class MainWindow(QtGui.QMainWindow):
                 self.ui.paymentTable.update()
         if e.key() == QtCore.Qt.Key_F2:
             self.explorer.show()
+        #temp;
+        if e.key() == QtCore.Qt.Key_Escape:
+            self.ui.mapView.test(e)
 
     def startup(self):
         """Get GPS data and set up models"""
@@ -386,18 +391,18 @@ class MainWindow(QtGui.QMainWindow):
         if ticket_list:
             for ticket in ticket_list:
                 pos = self.ui.jobTickets.count() + 1
-                ticket_name = QtGui.QListWidgetItem()
+                ticket_name = QtWidgets.QListWidgetItem()
                 ticket_name.setText(ticket.get_name())
-                ticket_name.setTextColor(text_colour)
+                ticket_name.setForeground(text_colour)
                 if ticket.get_cat() == 'Removal':
                     colour = QtGui.QColor(140, 142, 255)
-                    ticket_name.setBackgroundColor(colour)
+                    ticket_name.setBackground(colour)
                 elif ticket.get_cat() == 'Work':
                     colour = QtGui.QColor(253, 160, 127)
-                    ticket_name.setBackgroundColor(colour)
+                    ticket_name.setBackground(colour)
                 else:
                     colour = QtGui.QColor(172, 209, 158)
-                    ticket_name.setBackgroundColor(colour)
+                    ticket_name.setBackground(colour)
                 self.ui.jobTickets.insertItem(pos, ticket_name)
             sel = self.ui.jobTickets.item(0)
             self.ui.jobTickets.setCurrentItem(sel)

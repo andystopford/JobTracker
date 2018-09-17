@@ -1,26 +1,28 @@
-from PyQt4 import QtCore, QtGui
+from PyQt5 import QtCore, QtWidgets
 
 
-class YearView(QtGui.QTableView):
+class YearView(QtWidgets.QTableView):
     def __init__(self, parent):
         """The year planner interface"""
-        super(YearView, self).__init__(parent)
+        super().__init__(parent)
         self.parent = parent
         horiz_header = self.horizontalHeader()
-        horiz_header.setResizeMode(QtGui.QHeaderView.Stretch)
+        horiz_header.setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
         vert_header = self.verticalHeader()
-        vert_header.setResizeMode(QtGui.QHeaderView.Stretch)
-        self.setEditTriggers(QtGui.QAbstractItemView.NoEditTriggers)
+        vert_header.setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
+        self.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
 
     def set_selection_model(self, model):
         """
         Set up a QItemSelectionModel - sends the current and previous selection
         - we want the current ([0]) selection
         """
-        super(YearView, self).setModel(model)
-        self.connect(self.selectionModel(),
-                     QtCore.SIGNAL("selectionChanged(QItemSelection, "
-                                   "QItemSelection)"), self.get_selection)
+        super().setModel(model)
+        #self.connect(self.selectionModel(),
+        #             QtCore.SIGNAL("selectionChanged(QItemSelection, "
+        #                           "QItemSelection)"), self.get_selection)
+        selection_model = self.selectionModel()
+        selection_model.selectionChanged.connect(self.get_selection)
 
     def get_selection(self):
         indices = self.selectedIndexes()

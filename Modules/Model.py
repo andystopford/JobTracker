@@ -1,7 +1,7 @@
 import time
 from itertools import cycle, islice
 
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtGui, QtCore
 from Ticket import Ticket
 from Year import *
 
@@ -10,7 +10,7 @@ class Model(QtGui.QStandardItemModel):
     def __init__(self, parent):
         """The model underlying YearView - contains job tickets
                 associated with days."""
-        super(Model, self).__init__(parent)
+        super().__init__(parent)
         self.parent = parent
         self.setRowCount(12)
         self.setColumnCount(37)

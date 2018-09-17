@@ -1,14 +1,15 @@
-#!/usr/bin/python3.4
+#!/usr/bin/python3.6
 import sys
 
-from PyQt4 import QtGui, Qt
+from PyQt5 import QtGui, Qt
+from PyQt5.QtWidgets import QApplication, QSplashScreen
 
 from JobTracker import MainWindow
 
 if __name__ == "__main__":
-    app = QtGui.QApplication(sys.argv)
+    app = QApplication(sys.argv)
     splash_pix = QtGui.QPixmap("./Icons/icon_start.png")
-    splash = QtGui.QSplashScreen(splash_pix, Qt.Qt.WindowStaysOnTopHint)
+    splash = QSplashScreen(splash_pix, Qt.Qt.WindowStaysOnTopHint)
     splash.setMask(splash_pix.mask())
     splash.show()
     app.processEvents()

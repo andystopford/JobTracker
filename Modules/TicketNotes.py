@@ -1,10 +1,10 @@
-from PyQt4 import QtGui
+from PyQt5 import QtWidgets
 
 
-class TicketNotes(QtGui.QTextEdit):
+class TicketNotes(QtWidgets.QTextEdit):
     def __init__(self, parent):
         """Editable field for job notes"""
-        super(TicketNotes, self).__init__(parent)
+        super().__init__(parent)
         self.parent = parent
 
     def load_text(self):

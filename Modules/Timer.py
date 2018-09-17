@@ -1,6 +1,6 @@
 import time
 
-from PyQt4 import QtCore, QtGui
+from PyQt5 import QtCore, QtGui
 from Ticket import Track
 from TimeConverter import TimeConverter
 from Year import Year

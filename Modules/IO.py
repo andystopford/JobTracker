@@ -3,7 +3,7 @@ import sys
 import xml.etree.ElementTree as ET
 
 import os.path
-from PyQt4 import QtGui
+from PyQt5 import QtGui
 
 sys.path.append("./Modules")
 from Year import *

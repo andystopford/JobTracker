@@ -1,6 +1,6 @@
 import sys
 
-from PyQt4 import QtCore, QtGui
+from PyQt5 import QtCore, QtGui, QtWidgets
 
 sys.path.append("./UI")
 import os.path
@@ -10,12 +10,13 @@ from Year import *
 import time
 import serial
 import serial.tools.list_ports
+#from serial import*
 import csv
 
 
-class Explorer(QtGui.QMainWindow):
+class Explorer(QtWidgets.QMainWindow):
     def __init__(self, parent=None):
-        QtGui.QWidget.__init__(self, parent, QtCore.Qt.WindowStaysOnTopHint)
+        super().__init__(parent, QtCore.Qt.WindowStaysOnTopHint)
         """Controls for filters, totalling expenses, etc."""
         self.ui = Explorer_Ui()
         self.ui.setup_ui(self)
@@ -207,12 +208,12 @@ class Explorer(QtGui.QMainWindow):
             ticket_hours = tc.get_time_hrs_mins(ticket_hours)
             job_costs += ticket_cost
             ticket_cost = '{0:.2f}'.format(ticket_cost)
-            date = QtGui.QTableWidgetItem(date)
-            name = QtGui.QTableWidgetItem(name)
-            hours = QtGui.QTableWidgetItem(str(ticket_hours))
-            miles = QtGui.QTableWidgetItem(str(ticket_miles))
-            ticket_cost = QtGui.QTableWidgetItem(str(ticket_cost))
-            payment = QtGui.QTableWidgetItem(str(paid))
+            date = QtWidgets.QTableWidgetItem(date)
+            name = QtWidgets.QTableWidgetItem(name)
+            hours = QtWidgets.QTableWidgetItem(str(ticket_hours))
+            miles = QtWidgets.QTableWidgetItem(str(ticket_miles))
+            ticket_cost = QtWidgets.QTableWidgetItem(str(ticket_cost))
+            payment = QtWidgets.QTableWidgetItem(str(paid))
             costs_table.setItem(row, 0, date)
             costs_table.setItem(row, 1, name)
             costs_table.setItem(row, 2, hours)
@@ -227,11 +228,11 @@ class Explorer(QtGui.QMainWindow):
         job_miles = '{0:.2f}'.format(job_miles)
         job_costs = '{0:.2f}'.format(job_costs)
         job_payment = '{0:.2f}'.format(job_payment)
-        total_label = QtGui.QTableWidgetItem('Total')
-        job_hours = QtGui.QTableWidgetItem(str(job_hours))
-        job_miles = QtGui.QTableWidgetItem(str(job_miles))
-        job_costs = QtGui.QTableWidgetItem(job_costs)
-        job_payment = QtGui.QTableWidgetItem(job_payment)
+        total_label = QtWidgets.QTableWidgetItem('Total')
+        job_hours = QtWidgets.QTableWidgetItem(str(job_hours))
+        job_miles = QtWidgets.QTableWidgetItem(str(job_miles))
+        job_costs = QtWidgets.QTableWidgetItem(job_costs)
+        job_payment = QtWidgets.QTableWidgetItem(job_payment)
         total_label.setTextColor(colour)
         job_hours.setTextColor(colour)
         job_miles.setTextColor(colour)
@@ -276,7 +277,7 @@ class Explorer(QtGui.QMainWindow):
 
     def get_chk_box(self):
         """Prepares a check box for insertion in table"""
-        chk_box = QtGui.QTableWidgetItem()
+        chk_box = QtWidgets.QTableWidgetItem()
         chk_box.setFlags(QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled)
         chk_box.setCheckState(QtCore.Qt.Checked)
         return chk_box
@@ -368,7 +369,7 @@ class Explorer(QtGui.QMainWindow):
                 data = self.ser.readline()
 
     def write_file_list(self, fname):
-        file_item = QtGui.QListWidgetItem()
+        file_item = QtWidgets.QListWidgetItem()
         file_item.setText(fname)
         self.ui.file_lister.addItem(file_item)
 
@@ -414,7 +415,7 @@ class Explorer(QtGui.QMainWindow):
                 text = text.strip()
                 self.ui.info_display.append(text)
                 self.ui.info_display.moveCursor(QtGui.QTextCursor.End)
-                QtGui.QApplication.processEvents()  # Let it process GUI events
+                QtWidgets.QApplication.processEvents()  # Let it process GUI events
                 if len(text) > 0:
                     data_list.append([text])
                 if data == b'\r':
@@ -447,7 +448,7 @@ class Explorer(QtGui.QMainWindow):
 
 
 ###############################################################################
-class QColorButton(QtGui.QPushButton):
+class QColorButton(QtWidgets.QPushButton):
     """Custom Qt Widget to show a chosen color.
     Left-clicking the button shows the color-chooser, while
     right-clicking resets the color to None (no-color).
@@ -455,7 +456,7 @@ class QColorButton(QtGui.QPushButton):
     colorChanged = QtCore.pyqtSignal()
 
     def __init__(self, *args, **kwargs):
-        super(QColorButton, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self._color = None
         self.setMaximumWidth(32)
@@ -480,7 +481,7 @@ class QColorButton(QtGui.QPushButton):
         Qt will use the native dialog by default.
 
         '''
-        dlg = QtGui.QColorDialog(self)
+        dlg = QtWidgets.QColorDialog(self)
         if self._color:
             dlg.setCurrentColor(QtGui.QColor(self._color))
 
@@ -491,4 +492,4 @@ class QColorButton(QtGui.QPushButton):
         if e.button() == QtCore.Qt.RightButton:
             self.setColor(None)
 
-        return super(QColorButton, self).mousePressEvent(e)
+        return super().mousePressEvent(e)

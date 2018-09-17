@@ -5,10 +5,10 @@ Hazen 06/13
 https://github.com/ZhuangLab/storm-analysis/blob/master/storm_analysis/
 visualizer/qtRangeSlider.py#L298
 """
-from PyQt4 import QtCore, QtGui
+from PyQt5 import QtCore, QtGui, QtWidgets
 
 
-class QRangeSlider(QtGui.QWidget):
+class QRangeSlider(QtWidgets.QWidget):
     """
     Range Slider super class.
     """
@@ -16,7 +16,7 @@ class QRangeSlider(QtGui.QWidget):
     rangeChanged = QtCore.pyqtSignal(float, float)
 
     def __init__(self, slider_range, values, parent=None):
-        QtGui.QWidget.__init__(self, parent)
+        super().__init__(parent)
         self.bar_width = 12
         self.emit_while_moving = 0
         self.moving = "none"
@@ -154,7 +154,7 @@ class QHRangeSlider(QRangeSlider):
     Horizontal Range Slider.
     """
     def __init__(self, slider_range=None, values=None, parent=None):
-        QRangeSlider.__init__(self, slider_range, values, parent)
+        super().__init__(slider_range, values, parent)
 
     def getPos(self, event):
         return event.x()

@@ -1,22 +1,22 @@
 from decimal import *
 
-from PyQt4 import QtCore, QtGui
+from PyQt5 import QtCore, QtGui, QtWidgets
 
 
-class ExpensesTable(QtGui.QTableWidget):
+class ExpensesTable(QtWidgets.QTableWidget):
     def __init__(self, parent):
         """"""
-        super(ExpensesTable, self).__init__(parent)
+        super().__init__(parent)
         self.parent = parent
         self.setRowCount(2)
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-        self.connect(self, QtCore.SIGNAL("customContextMenuRequested"
-                                         "(QPoint)"), self.rclick_menu)
-        self.setSelectionMode(QtGui.QAbstractItemView.NoSelection)
+        #self.connect(self, QtCore.SIGNAL("customContextMenuRequested"
+        #                                 "(QPoint)"), self.rclick_menu)
+        self.setSelectionMode(QtWidgets.QAbstractItemView.NoSelection)
 
-    def rclick_menu(self):
-        menu = QtGui.QMenu(self)
-        delete = QtGui.QAction('Delete', self)
+    def contextMenuEvent(self, event):
+        menu = QtWidgets.QMenu(self)
+        delete = QtWidgets.QAction('Delete', self)
         menu.addAction(delete)
         menu.popup(QtGui.QCursor.pos())
         delete.triggered.connect(self.delete_entry)
@@ -37,9 +37,9 @@ class ExpensesTable(QtGui.QTableWidget):
             exp_list = ticket.get_expenses()
             self.setRowCount(len(exp_list) + 1)
             for row, exp in enumerate(exp_list):
-                item = QtGui.QTableWidgetItem(exp[0])
+                item = QtWidgets.QTableWidgetItem(exp[0])
                 self.setItem(row, 0, item)
-                exp = QtGui.QTableWidgetItem(exp[1])
+                exp = QtWidgets.QTableWidgetItem(exp[1])
                 self.setItem(row, 1, exp)
             self.total(exp_list)
 
@@ -67,14 +67,14 @@ class ExpensesTable(QtGui.QTableWidget):
         colour = QtGui.QColor(255, 159, 161)
         brush = QtGui.QBrush(colour)
         text_colour = QtGui.QColor('#1d1e1f')
-        label = QtGui.QTableWidgetItem()
+        label = QtWidgets.QTableWidgetItem()
         label.setText('Total')
         label.setBackground(brush)
-        label.setTextColor(text_colour)
-        total_cost_item = QtGui.QTableWidgetItem()
+        label.setForeground(text_colour)
+        total_cost_item = QtWidgets.QTableWidgetItem()
         total_cost_item.setText(str(total_cost))
         total_cost_item.setBackground(brush)
-        total_cost_item.setTextColor(text_colour)
+        total_cost_item.setForeground(text_colour)
         self.setItem(row_count - 1, 0, label)
         self.setItem(row_count - 1, 1, total_cost_item)
         self.insertRow(row_count - 1)

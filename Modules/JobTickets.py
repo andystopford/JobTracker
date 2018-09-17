@@ -1,16 +1,23 @@
-from PyQt4 import QtCore, QtGui
+from PyQt5 import QtCore, QtGui, QtWidgets
 
 
-class JobTickets(QtGui.QListWidget):
+class JobTickets(QtWidgets.QListWidget):
     def __init__(self, parent):
-        super(JobTickets, self).__init__(parent)
+        super().__init__(parent)
         """Displays list of job tickets"""
         self.parent = parent
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-        self.connect(self, QtCore.SIGNAL("customContextMenuRequested(QPoint)"),
-                     self.rclick_menu)
+        #self.connect(self, QtCore.SIGNAL("customContextMenuRequested(QPoint)"),
+        #             self.rclick_menu)
         self.itemActivated.connect(self.select_ticket)
         self.itemDoubleClicked.connect(self.rename_ticket)
+
+    def contextMenuEvent(self, event):
+        menu = QtWidgets.QMenu(self)
+        delete = QtWidgets.QAction('Delete', self)
+        menu.addAction(delete)
+        menu.popup(QtGui.QCursor.pos())
+        delete.triggered.connect(self.delete_entry)
 
     def select_ticket(self):
         """By clicking item or from JT.display_tickets()"""
@@ -46,13 +53,6 @@ class JobTickets(QtGui.QListWidget):
                 tkt.set_name(curr_item.text())
         self.parent.timer.fill_menu()
         self.parent.dirty = True
-
-    def rclick_menu(self):
-        menu = QtGui.QMenu(self)
-        delete = QtGui.QAction('Delete', self)
-        menu.addAction(delete)
-        menu.popup(QtGui.QCursor.pos())
-        delete.triggered.connect(self.delete_entry)
 
     def delete_entry(self):
         row_index = self.currentRow()

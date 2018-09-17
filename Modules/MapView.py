@@ -1,90 +1,144 @@
-import json
 import sys
 
 import matplotlib.cm as cm
 import matplotlib.colors
 from PostcodesIO import PostcodeIO
-from PyQt4 import QtCore, QtWebKit
+from PyQt5.QtWidgets import QVBoxLayout, QWidget
+from pyqtlet import L, MapWidget
 
 sys.path.append('./Scripts/')
 
 
-class MapView(QtWebKit.QWebView):
+class MapView(QWidget):
     def __init__(self, parent):
+        super().__init__(parent)
         """Displays OpenStreetMap"""
         self.parent = parent
-        super(MapView, self).__init__(parent)
-        self.page().mainFrame().addToJavaScriptWindowObject("MainWindow", self)
-        self.load(QtCore.QUrl('./Scripts/map.html'))
-        self.loadFinished.connect(self.load_map)
-        self.frame = self.page().mainFrame()
-        self.layer_name = 0
+        self.mapWidget = MapWidget()
+        self.layout = QVBoxLayout()
+        self.layout.addWidget(self.mapWidget)
+        self.setLayout(self.layout)
+        self.map = L.map(self.mapWidget)
+        self.home = [51.1595954895, 0.260109901428]
+        self.map.setView(self.home, 13)
+        self.vector_map = L.tileLayer('http://{s}.tile.openstreetmap.org'
+                                      '/{z}/{x}/{y}.png')
+        self.vector_map.addTo(self.map)
+        self.show()
+
+        self.cross_hairs = L.circleMarker(self.home, 10)
+        self.cross_hairs.addTo(self.map)
+
+        self.track_layer_grp = L.layerGroup()
+        self.map.addLayer(self.track_layer_grp)
+
+        self.follower_layer_grp = L.layerGroup()
+        self.map.addLayer(self.follower_layer_grp)
+
+        self.tracker_name = ''
+        self.tracker = L.marker(self.home)
+
+        self.seg_layer_grp = L.layerGroup()
+        self.map.addLayer(self.seg_layer_grp)
+
+        self.pcode_grp = L.layerGroup()
+        self.map.addLayer(self.pcode_grp)
+
+        self.route_ctrl = L.routing()
+        self.map.addLayer(self.route_ctrl)
+
         self.colour_index = 0
         self.colormap = cm.autumn
-        self.routing_ctrl_hidden = False
 
-    def load_map(self):
-        """Load a map from specified provider"""
-        with open('./Scripts/map.js', 'r') as f:
-            self.frame.evaluateJavaScript(f.read())
-            self.frame.evaluateJavaScript('add_osm_map();')
-            #self.frame.evaluateJavaScript('nom_router();')
-            self.toggle_router()
+        #self.map.moved.connect(self.test2)
+        self.map.zoom.connect(self.test1)
+        self.map.clicked.connect(self.get_clicked)
 
-    def osm_map(self):
-        """Load standard OSM vector map"""
-        self.frame.evaluateJavaScript('add_osm_map();')
+    def test(self, event):
+        print(event)
+        self.map.getState(self.get_state)
 
-    def terrain_map(self):
-        """Load Mapbox outdoors-v10"""
-        self.frame.evaluateJavaScript('add_terr_map();')
+    def get_state(self, e):
+        """Gets map state"""
+        print(e)
 
-    def sat_map(self):
-        """Load Mapbox Satellite images"""
-        self.frame.evaluateJavaScript('add_sat();')
+    def test1(self, e):
+        print(e['type'].toString())
+
+    def test2(self, e):
+        """Get the name of the pyqt signal e.g. 'Moved' """
+        mov = list(e.values())
+        for obj in mov:
+            print('obj', obj.toString())
+        print(mov)
+
+    def test3(self, e):
+        print('test3', e)
+
+    def get_clicked(self, event):
+        """Get latlng from clicked point"""
+        # Extract QJsonValue object with key 'latlng'
+        latlng = event['latlng']
+        # Get the dictionary containing keys 'lat' and 'lng'
+        latlng = latlng.toVariant()
+        print(latlng)
 
     def clear_map(self):
-        """Removes previously drawn tracks and markers"""
-        home = [51.1595954895, 0.260109901428]
-        self.frame.evaluateJavaScript('clear_tracks();')
-        self.frame.evaluateJavaScript('clear_layer_grp();')
-        self.frame.evaluateJavaScript('clear_followers();')
-        self.frame.evaluateJavaScript('clear_waypoints();')
-        self.frame.evaluateJavaScript('move({}, {});'.format(home[0], home[1]))
+        self.map.removeLayer(self.tracker)
+        self.track_layer_grp.clearLayers()
+        self.follower_layer_grp.clearLayers()
+        self.map.setView([51.1595954895, 0.260109901428], 13)
+
+    def draw_tracker(self, posn):
+        """Draws a tracker
+        """
+        self.map.removeLayer(self.tracker)
+        lat = posn[0]
+        lng = posn[1]
+        self.tracker = L.marker([lat, lng])
+        self.map.addLayer(self.tracker)
+
+    def zoom_tracker(self):
+        """Zooms to tracker
+        """
+        latlng = self.tracker.getLatlng()
+        self.map.setView(latlng, 15)
 
     def draw_track(self, point_list):
         """Breaks TrackPoint list into overlapping pairs and draws a
-        polyline for each pair, coloured from a cmap gradient"""
+                polyline for each pair, coloured from a cmap gradient"""
         pair_list = []
         cmap = self.colormap
-        pairs = [point_list[i:i+2] for i in range(0, len(point_list), 1)]
+        pairs = [point_list[i:i + 2] for i in range(0, len(point_list), 1)]
         for pair in pairs:
             # Pairs of TrackPoints
             pair_list.append(pair)
         for i, pair in enumerate(pair_list):
-            colour = cmap(i/len(pair_list))
-            # Convert to Hex:
-            colour = self.convert_colour(colour)
-            place_list = []
+            latlngs = []
             for item in pair:
                 lat = str(item.get_lat())
                 lon = str(item.get_lon())
-                place_list.append([lat, lon])
-            self.frame.evaluateJavaScript('add_track({}, {});'.
-                                          format(place_list, colour))
+                latlngs.append([lat, lon])
+            #colour = cmap(i / len(pair_list))
+            # Convert to Hex:
+            #colour = self.convert_colour(colour)
+            track_layer = L.polyline(latlngs, {'color': '#aa82ff'})
+            self.track_layer_grp.addLayer(track_layer)
 
-    def hide_track(self):
-        # TODO
+    def draw_waypoints(self, point_list):
+        """Adds a marker to distinguish recorded waypoints from
+        the interpolated marker position"""
         return
 
     def get_trail_pairs(self, before_points, after_points):
         """Breaks point lists into pairs and assigns colours for before
         and after trails"""
-        self.frame.evaluateJavaScript('clear_followers();')
+        self.follower_layer_grp.clearLayers()
         b_pair_list = []
         a_pair_list = []
-        bef_cols = ["#ff7e7e", "red"]
-        aft_cols = ["blue", "#c2c0ff"]
+        #bef_cols = ["#ff7e7e", "red"]
+        bef_cols = ["#ffdfdd", "red"]
+        aft_cols = ["blue", "#f4f3ff"]
         cmap_before = matplotlib.colors.LinearSegmentedColormap.from_list\
             ("", bef_cols)
         cmap_after = matplotlib.colors.LinearSegmentedColormap.from_list\
@@ -111,97 +165,33 @@ class MapView(QtWebKit.QWebView):
                 lat = str(item.get_lat())
                 lon = str(item.get_lon())
                 place_list.append([lat, lon])
-            self.frame.evaluateJavaScript('add_solid_track({}, {});'.
-                                          format(place_list, colour))
+            self.add_solid_track(place_list, colour)
 
-    def draw_waypoints(self, point_list):
-        """Adds a marker to distinguish recorded waypoints from
-        the interpolated marker position"""
-        cmap = self.colormap
-        place_list = []
-        for item in point_list:
-            lat = str(item.get_lat())
-            lon = str(item.get_lon())
-            place_list.append([lat, lon])
-        for i, posn in enumerate(place_list):
-            colour = cmap(i/len(place_list))
-            colour = self.convert_colour(colour)
-            lat = posn[0]
-            lon = posn[1]
-            self.frame.evaluateJavaScript('add_waypoint({}, {});'.
-                                          format([lat, lon], colour))
-
-    def set_colormap(self, colormap):
-        """Colourmaps for graduated colour in tracks"""
-        colormap_list = [cm.autumn, cm.brg, cm.hsv, cm.jet]
-        self.colormap = colormap_list[colormap]
-
-    def convert_colour(self, colour):
-        colour = '#%02x%02x%02x' % (255 * colour[0], 255 * colour[1], 255
-                                    * colour[2])
-        colour = str(colour)
-        colour = ' " ' + colour + ' " '
-        return colour
-
-    def draw_tracker(self, posn):
-        lat = posn[0]
-        lon = posn[1]
-        self.frame.evaluateJavaScript('draw_tracker({}, {});'.format(lat, lon))
-
-    def zoom_tracker(self):
-        self.frame.evaluateJavaScript('center_on_marker();')
-
-    def marker_calc(self, time, time_events):
-        """time_events = list of lat longs"""
-        #pairs = [time_events[i:i + 2] for i in range(0, len(time_events), 2)]
-        #print(pairs)
-        if len(time_events) == 1:
-            self.draw_start(time_events[0], time)
-        else:
-            self.draw_end(time_events[-1])
+    def add_solid_track(self, latlngs, colour):
+        """Adds polyline layers to follower_grp"""
+        follower_layer = L.polyline(latlngs, {'color': colour, 'weight': 4})
+        self.follower_layer_grp.addLayer(follower_layer)
 
     def add_segment(self, leg_points, col=None):
-        """"""
-        place_list = []
+        """Adds tracks from previous tickets"""
         colour_list = ['#fda07f', '#cd82f2', '#7fd4fd', '#8bf282', '#fde083']
         if not col:
             curr_colour = colour_list[self.colour_index]
         else:
             curr_colour = col
-        colour = json.dumps(curr_colour)
+        latlngs = []
         for item in leg_points:
             lat = str(item.get_lat())
             lon = str(item.get_lon())
-            place_list.append([lat, lon])
-        self.frame.evaluateJavaScript('add_segment({}, {});'.format
-                                      (place_list, colour))
+            latlngs.append([lat, lon])
+        seg_layer = L.polyline(latlngs, {'color': curr_colour})
+        self.seg_layer_grp.addLayer(seg_layer)
         if self.colour_index < 4:
             self.colour_index += 1
         else:
             self.colour_index = 0
         return curr_colour
 
-    def remove_segment(self, block):
-        print('MapView, line 186', block)
-        x = self.frame.evaluateJavaScript('hide_segment({});'.format(block))
-        print('MapView, line 188', x)
-
-    def draw_start(self, start, time):
-        start_lat = start[0]
-        start_lon = start[1]
-        block = str(self.parent.time_block)
-        time = str('<b>' + 'Block' + ' ' + block + ':' + '</b><br>' + time)
-        time = json.dumps(time)  # Convert Python string to JS
-        self.frame.evaluateJavaScript('add_start({}, {}, {})'.
-                                      format(start_lat, start_lon, time))
-
-    def draw_end(self, end):
-        end_lat = end[0]
-        end_lon = end[1]
-        self.frame.evaluateJavaScript('add_end({}, {});'.
-                                      format(end_lat, end_lon))
-
-    # Routing
     def route(self):
         """Calculate route between two postcodes"""
         pio = PostcodeIO()
@@ -210,7 +200,7 @@ class MapView(QtWebKit.QWebView):
         if self.parent.ui.to_box.text():
             postcode_to = self.parent.ui.to_box.text()
             go_to = pio.get_latlng(postcode_to)
-            self.frame.evaluateJavaScript('remove_pcode_marker();')
+            self.pcode_grp.clearLayers()
             self.frame.evaluateJavaScript('route({}, {});'
                                           .format(go_from, go_to))
         else:
@@ -219,32 +209,19 @@ class MapView(QtWebKit.QWebView):
                                           .format(go_from))
 
     def toggle_router(self):
-        """Toggle visibility of routing control on map"""
-        if self.routing_ctrl_hidden:
-            self.frame.evaluateJavaScript('show_ctrl();')
-            self.routing_ctrl_hidden = False
-            self.parent.ui.button_rhide.setText("Hide Routing")
-        else:
-            self.frame.evaluateJavaScript('hide_ctrl();')
-            self.routing_ctrl_hidden = True
-            self.parent.ui.button_rhide.setText("Show Routing")
+        return
 
     def clear_route(self):
-        """Remove route display and markers"""
-        self.frame.evaluateJavaScript('clear_route();')
-        self.frame.evaluateJavaScript('remove_pcode_marker();')
+        return
 
-    def test(self):
-        test = self.frame.evaluateJavaScript('test();')
-        print(test)
+    def set_colormap(self, colormap):
+        """Colourmaps for graduated colour in tracks"""
+        colormap_list = [cm.autumn, cm.brg, cm.hsv, cm.jet]
+        self.colormap = colormap_list[colormap]
 
-    @QtCore.pyqtSlot(float, float)  # required to make Python method
-    # available to JS
-    def onMapMove(self, lat, lng):
-        self.parent.ui.coord_display.setText('Lng: {:.5f}, Lat: {:.5f}'.
-                                             format(lng, lat))
-
-    def panMap(self, lng, lat):
-        self.frame.evaluateJavaScript('map.panTo(L.latLng({}, {}));'.
-                                      format(lat, lng))
-
+    def convert_colour(self, colour):
+        """Converts decimal numbers to hex string"""
+        colour = '#%02x%02x%02x' % (int(255 * colour[0]), int(255 * colour[1]),
+                                    int(255 * colour[2]))
+        colour = str(colour)
+        return colour

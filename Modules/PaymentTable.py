@@ -1,17 +1,17 @@
-from PyQt4 import QtGui
+from PyQt5 import QtWidgets
 
 
-class PaymentTable(QtGui.QTableWidget):
+class PaymentTable(QtWidgets.QTableWidget):
     """Table where payments can be added/displayed for selected job ticket"""
     def __init__(self, parent):
-        super(PaymentTable, self).__init__(parent)
-        self.setSelectionMode(QtGui.QAbstractItemView.NoSelection)
+        super().__init__(parent)
+        self.setSelectionMode(QtWidgets.QAbstractItemView.NoSelection)
         self.parent = parent
         self.init()
 
     def init(self):
-        payment = QtGui.QTableWidgetItem()
-        amount = QtGui.QTableWidgetItem()
+        payment = QtWidgets.QTableWidgetItem()
+        amount = QtWidgets.QTableWidgetItem()
         self.setItem(0, 0, payment)
         self.setItem(0, 1, amount)
         self.setHorizontalHeaderLabels(['Payment', 'Amount'])

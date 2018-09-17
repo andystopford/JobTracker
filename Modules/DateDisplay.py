@@ -1,12 +1,12 @@
-from PyQt4 import QtCore, QtGui, Qt
+from PyQt5 import QtCore, QtGui, Qt, QtWidgets
 
 
-class DateDisplay(QtGui.QStyledItemDelegate):
+class DateDisplay(QtWidgets.QStyledItemDelegate):
     def __init__(self, parent):
         """Colour codes any days from existing GPS files and fills in
         date text
         """
-        super(DateDisplay, self).__init__(parent)
+        super().__init__(parent)
         self.date_list =[]
         self.log_list = []
         self.parent = parent
@@ -19,7 +19,7 @@ class DateDisplay(QtGui.QStyledItemDelegate):
         self.log_list = log_list
 
     def paint(self, painter, option, index):
-        super(DateDisplay, self).paint(painter, option, index)
+        super().paint(painter, option, index)
         horiz_header = self.parent.horizontalHeader()
         cell_x = horiz_header.sectionSize(0)
         vert_header = self.parent.verticalHeader()

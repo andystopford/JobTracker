@@ -1,11 +1,11 @@
 from GpsAnalyser import *
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtGui, QtCore
 from TimeConverter import *
 
 
 class TrackModel(QtGui.QStandardItemModel):
     def __init__(self, parent):
-        super(TrackModel, self).__init__(parent)
+        super().__init__(parent)
         """Model to contain track segments selected from map to
         display in trackTable"""
         self.parent = parent

@@ -1,20 +1,20 @@
 #!/usr/bin/env python
 import DarkStyle
-from PyQt4 import QtCore, QtGui
+from PyQt5 import QtCore, QtWidgets
 
 
-class Completer(QtGui.QCompleter):
+class Completer(QtWidgets.QCompleter):
     def __init__(self, parent):
         """Completer for the job_name_box which suggests job names from the
         current year"""
-        super(Completer, self).__init__(parent)
+        super().__init__(parent)
         self.parent = parent
-        self.setCompletionMode(QtGui.QCompleter.PopupCompletion)
+        self.setCompletionMode(QtWidgets.QCompleter.PopupCompletion)
         self.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
-        model = QtGui.QStringListModel()
+        model = QtCore.QStringListModel()
         model.setStringList(self.get_job_list())
         self.setModel(model)
-        self.popup().setStyleSheet(DarkStyle.load_stylesheet())
+        self.popup().setStyleSheet(DarkStyle.load_stylesheet_pyqt5())
 
     def get_job_list(self):
         """Get a list of all job names ffor the current year"""
