@@ -11,11 +11,10 @@ class HoursTable(QtWidgets.QTableWidget):
         self.setDragDropMode(QtWidgets.QAbstractItemView.DropOnly)
         self.parent = parent
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-        #self.connect(self, QtCore.SIGNAL("customContextMenuRequested"
-        #                                "(QPoint)"), self.rclick_menu)
+        self.customContextMenuRequested.connect(self.rclick)
         self.setSelectionMode(QtWidgets.QAbstractItemView.NoSelection)
 
-    def contextMenuEvent(self, event):
+    def rclick(self):
         menu = QtWidgets.QMenu(self)
         add = QtWidgets.QAction('Add', self)
         delete = QtWidgets.QAction('Delete', self)
@@ -96,6 +95,8 @@ class HoursTable(QtWidgets.QTableWidget):
         self.clear()
         self.fill_table()
         self.parent.dirty = True
+        self.setHorizontalHeaderLabels(['Start', 'End', 'Hours', 'Miles',
+                                        'Notes'])
 
     def delete_track(self):
         """Delete track after R- click event"""

@@ -7,12 +7,11 @@ class JobTickets(QtWidgets.QListWidget):
         """Displays list of job tickets"""
         self.parent = parent
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-        #self.connect(self, QtCore.SIGNAL("customContextMenuRequested(QPoint)"),
-        #             self.rclick_menu)
+        self.customContextMenuRequested.connect(self.rclick)
         self.itemActivated.connect(self.select_ticket)
         self.itemDoubleClicked.connect(self.rename_ticket)
 
-    def contextMenuEvent(self, event):
+    def rclick(self):
         menu = QtWidgets.QMenu(self)
         delete = QtWidgets.QAction('Delete', self)
         menu.addAction(delete)
@@ -63,7 +62,7 @@ class JobTickets(QtWidgets.QListWidget):
         day = self.parent.get_day()
         model = day[0]
         model.delete_ticket(day[1], day[2], row_index)
-        self.parent.explorer.refresh_today()
+        #self.parent.explorer.refresh_today()
         self.parent.dirty = True
 
 

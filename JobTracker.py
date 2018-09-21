@@ -10,7 +10,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, see <http://www.gnu.org/licenses/>.
 #
-# JobTracker version 2.3.1  01/06/18
+# JobTracker version 2.5.0 21/09/18
 #######################################################################
 import sys
 sys.path.append("./Modules")
@@ -43,7 +43,7 @@ class MainWindow(QMainWindow):
         QWidget.__init__(self, parent)
         self.ui = Ui_mainWindow()
         self.ui.setup_ui(self)
-        self.setWindowTitle("JobTracker 2.3")
+        self.setWindowTitle("JobTracker 2.5")
         self.setWindowIcon(QtGui.QIcon('./Icons/shackles.png'))
         self.setStyleSheet(DarkStyle.load_stylesheet_pyqt5())
 
@@ -88,8 +88,7 @@ class MainWindow(QMainWindow):
         self.ui.button_sat.toggled.connect \
             (lambda: self.select_map(self.ui.button_sat))
         self.ui.button_route.clicked.connect(self.ui.mapView.route)
-        self.ui.button_rhide.clicked.connect(self.ui.mapView.toggle_router)
-        self.ui.button_clear.clicked.connect(self.ui.mapView.clear_route)
+        self.ui.button_clear_route.clicked.connect(self.ui.mapView.clear_route)
         self.ui.menu_track_cols.addAction('Autumn')
         self.ui.menu_track_cols.addAction('BRG')
         self.ui.menu_track_cols.addAction('HSV')
@@ -234,13 +233,13 @@ class MainWindow(QMainWindow):
         """Select displayed map type"""
         if b.text() == 'Map':
             if b.isChecked():
-                self.ui.mapView.osm_map()
+                self.ui.mapView.add_osm_map()
         if b.text() == 'Terrain':
             if b.isChecked():
-                self.ui.mapView.terrain_map()
+                self.ui.mapView.add_terrain_map()
         if b.text() == 'Satellite':
             if b.isChecked():
-                self.ui.mapView.sat_map()
+                self.ui.mapView.add_sat_map()
 
     def set_range(self):
         """Triggered by change of tracker range"""
@@ -480,30 +479,30 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event):
         """On closing application window"""
         if self.timer.timer_dirty:
-            reply = QtGui.QMessageBox.warning(self, "Timer Running",
+            reply = QtWidgets.QMessageBox.warning(self, "Timer Running",
                                               "Timer Running: Stop and "
-                                              "Save?", QtGui.QMessageBox.Yes
-                                              | QtGui.QMessageBox.No |
-                                              QtGui.QMessageBox.Cancel)
-            if reply == QtGui.QMessageBox.Cancel:
+                                              "Save?", QtWidgets.QMessageBox.Yes
+                                              | QtWidgets.QMessageBox.No |
+                                              QtWidgets.QMessageBox.Cancel)
+            if reply == QtWidgets.QMessageBox.Cancel:
                 event.ignore()
-            elif reply == QtGui.QMessageBox.Yes:
+            elif reply == QtWidgets.QMessageBox.Yes:
                 self.timer.pause()
                 self.timer.apply_timer()
                 event.ignore()
-            elif reply == QtGui.QMessageBox.No:
+            elif reply == QtWidgets.QMessageBox.No:
                 if self.dirty:
                     event.ignore()
                 else:
                     pass
         elif self.dirty:
-            reply = QtGui.QMessageBox.question(self, "UnSaved Data", "Save ?",
-                                               QtGui.QMessageBox.Yes |
-                                               QtGui.QMessageBox.No |
-                                               QtGui.QMessageBox.Cancel)
-            if reply == QtGui.QMessageBox.Cancel:
+            reply = QtWidgets.QMessageBox.question(self, "UnSaved Data", "Save ?",
+                                               QtWidgets.QMessageBox.Yes |
+                                               QtWidgets.QMessageBox.No |
+                                               QtWidgets.QMessageBox.Cancel)
+            if reply == QtWidgets.QMessageBox.Cancel:
                 event.ignore()
-            elif reply == QtGui.QMessageBox.Yes:
+            elif reply == QtWidgets.QMessageBox.Yes:
                 self.save()
-            elif reply == QtGui.QMessageBox.No:
+            elif reply == QtWidgets.QMessageBox.No:
                 pass

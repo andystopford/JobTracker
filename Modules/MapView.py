@@ -4,6 +4,7 @@ import matplotlib.cm as cm
 import matplotlib.colors
 from PostcodesIO import PostcodeIO
 from PyQt5.QtWidgets import QVBoxLayout, QWidget
+from mapbox import Directions
 from pyqtlet import L, MapWidget
 
 sys.path.append('./Scripts/')
@@ -21,9 +22,22 @@ class MapView(QWidget):
         self.map = L.map(self.mapWidget)
         self.home = [51.1595954895, 0.260109901428]
         self.map.setView(self.home, 13)
-        self.vector_map = L.tileLayer('http://{s}.tile.openstreetmap.org'
+        self.osm_map = L.tileLayer('http://{s}.tile.openstreetmap.org'
                                       '/{z}/{x}/{y}.png')
-        self.vector_map.addTo(self.map)
+        self.terrain_map = L.tileLayer('https://api.mapbox.com'
+                                       '/styles/v1/mapbox/outdoors-v10/tiles/'
+                                       '256/{z}/{x}/{y}?access_token=pk.'
+                                       'eyJ1IjoiYW5keXN0b3BwcyIsImEiOiJjaXUwN2'
+                                       'J4anEwMDAxMzNrZTQxeTVpeGx1In0.'
+                                       'BqZQL3MpuDI5kPi0LvZhkQ')
+        self.sat_map = L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/'
+                                   'satellite-v9/tiles/256/{z}/{x}/{y}?'
+                                   'access_token=pk.eyJ1IjoiYW5keXN0b3BwcyIs'
+                                   'ImEiOiJjaXUwN2J4anEwMDAxMzNrZTQxeTVpeGx1In'
+                                   '0.BqZQL3MpuDI5kPi0LvZhkQ')
+        self.map_layer_grp = L.layerGroup()
+        self.osm_map.addTo(self.map_layer_grp)
+        self.map_layer_grp.addTo(self.map)
         self.show()
 
         self.cross_hairs = L.circleMarker(self.home, 10)
@@ -41,18 +55,21 @@ class MapView(QWidget):
         self.seg_layer_grp = L.layerGroup()
         self.map.addLayer(self.seg_layer_grp)
 
+        self.start_end_grp = L.layerGroup()
+        self.map.addLayer(self.start_end_grp)
+
         self.pcode_grp = L.layerGroup()
         self.map.addLayer(self.pcode_grp)
 
-        self.route_ctrl = L.routing()
-        self.map.addLayer(self.route_ctrl)
+        self.routing_grp = L.layerGroup()
+        self.map.addLayer(self.routing_grp)
 
         self.colour_index = 0
         self.colormap = cm.autumn
 
         #self.map.moved.connect(self.test2)
-        self.map.zoom.connect(self.test1)
-        self.map.clicked.connect(self.get_clicked)
+        #self.map.zoom.connect(self.test1)
+        #self.map.clicked.connect(self.get_clicked)
 
     def test(self, event):
         print(event)
@@ -83,10 +100,27 @@ class MapView(QWidget):
         latlng = latlng.toVariant()
         print(latlng)
 
+    def add_osm_map(self):
+        """Load standard OSM vector map"""
+        self.map_layer_grp.clearLayers()
+        self.osm_map.addTo(self.map_layer_grp)
+
+    def add_terrain_map(self):
+        """Load Mapbox outdoors-v10"""
+        self.map_layer_grp.clearLayers()
+        self.terrain_map.addTo(self.map_layer_grp)
+
+    def add_sat_map(self):
+        """Load Mapbox Satellite images"""
+        self.map_layer_grp.clearLayers()
+        self.sat_map.addTo(self.map_layer_grp)
+
     def clear_map(self):
         self.map.removeLayer(self.tracker)
         self.track_layer_grp.clearLayers()
         self.follower_layer_grp.clearLayers()
+        self.seg_layer_grp.clearLayers()
+        self.start_end_grp.clearLayers()
         self.map.setView([51.1595954895, 0.260109901428], 13)
 
     def draw_tracker(self, posn):
@@ -103,6 +137,31 @@ class MapView(QWidget):
         """
         latlng = self.tracker.getLatlng()
         self.map.setView(latlng, 15)
+
+    def marker_calc(self, time, time_events):
+        """time_events = list of lat longs"""
+        #pairs = [time_events[i:i + 2] for i in range(0, len(time_events), 2)]
+        #print(pairs)
+        if len(time_events) == 1:
+            self.draw_start(time_events[0], time)
+        else:
+            self.draw_end(time_events[-1])
+
+    def draw_start(self, start, time):
+        """Start of work time block"""
+        start_lat = start[0]
+        start_lon = start[1]
+        block = str(self.parent.time_block)
+        time = str('<b>' + 'Block' + ' ' + block + ':' + '</b><br>' + time)
+        start_marker = L.marker([start_lat, start_lon])
+        self.start_end_grp.addLayer(start_marker)
+
+    def draw_end(self, end):
+        """End of work time block"""
+        end_lat = end[0]
+        end_lon = end[1]
+        end_marker = L.marker([end_lat, end_lon])
+        self.start_end_grp.addLayer(end_marker)
 
     def draw_track(self, point_list):
         """Breaks TrackPoint list into overlapping pairs and draws a
@@ -201,18 +260,35 @@ class MapView(QWidget):
             postcode_to = self.parent.ui.to_box.text()
             go_to = pio.get_latlng(postcode_to)
             self.pcode_grp.clearLayers()
-            self.frame.evaluateJavaScript('route({}, {});'
-                                          .format(go_from, go_to))
+            self.routing_grp.clearLayers()
+            self.mapbox_routing(go_from, go_to)
         else:
-            self.frame.evaluateJavaScript('remove_pcode_marker();')
-            self.frame.evaluateJavaScript('draw_pcode_marker({});'
-                                          .format(go_from))
+            self.pcode_grp.clearLayers()
+            pcode_marker = L.marker(go_from)
+            pcode_marker.bindPopup(postcode_from)
+            self.pcode_grp.addLayer(pcode_marker)
+            #self.map.open_popup()
 
-    def toggle_router(self):
-        return
+    def mapbox_routing(self, go_from, go_to):
+        """Get route using mapbox service"""
+        service = Directions(access_token='pk.eyJ1IjoiYW5keXN0b3BwcyIsImEiO'
+                                          'iJjaXUwN2J4anEwMDAxMzNrZTQxeTVpe'
+                                          'Gx1In0.BqZQL3MpuDI5kPi0LvZhkQ')
+        origin = {'type': 'Feature', 'geometry':
+            {'type': 'Point', 'coordinates': [go_from[1], go_from[0]]}}
+
+        destination = {'type': 'Feature', 'geometry':
+            {'type': 'Point', 'coordinates': [go_to[1], go_to[0]]}}
+        response = service.directions([origin, destination], 'mapbox/driving')
+        driving_routes = response.geojson()
+        route = driving_routes['features'][0]['geometry']['coordinates']
+        route = [list(elem) for elem in route]  # Convert to list of lists:
+        track_layer = L.polyline(route, {'color': '#FF00FF'})
+        self.routing_grp.addLayer(track_layer)
 
     def clear_route(self):
-        return
+        self.pcode_grp.clearLayers()
+        self.routing_grp.clearLayers()
 
     def set_colormap(self, colormap):
         """Colourmaps for graduated colour in tracks"""
