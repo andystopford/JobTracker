@@ -1,9 +1,6 @@
 from PyQt5.QtCore import pyqtSignal
 
 from ..core import Evented
-from PyQt5.QtCore import pyqtSignal
-
-from ..core import Evented
 
 
 class Control(Evented):

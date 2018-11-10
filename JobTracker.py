@@ -37,6 +37,8 @@ from Timer import Timer
 from WaitingSpinner import QtWaitingSpinner
 # from Ticket import Track
 
+import time
+
 
 class MainWindow(QMainWindow):
     def __init__(self, parent=None):
@@ -74,6 +76,8 @@ class MainWindow(QMainWindow):
         self.showMaximized()
         self.startup()
 
+
+
         # Signals
         self.ui.button_explore.clicked.connect(self.explorer.show)
         self.ui.button_back.clicked.connect(self.year_back)
@@ -87,8 +91,8 @@ class MainWindow(QMainWindow):
             (lambda: self.select_map(self.ui.button_terrain))
         self.ui.button_sat.toggled.connect \
             (lambda: self.select_map(self.ui.button_sat))
-        self.ui.button_route.clicked.connect(self.ui.mapView.route)
-        self.ui.button_clear_route.clicked.connect(self.ui.mapView.clear_route)
+        #self.ui.button_route.clicked.connect(self.ui.mapView.route)
+        #self.ui.button_clear_route.clicked.connect(self.ui.mapView.clear_route)
         self.ui.menu_track_cols.addAction('Autumn')
         self.ui.menu_track_cols.addAction('BRG')
         self.ui.menu_track_cols.addAction('HSV')
@@ -103,6 +107,17 @@ class MainWindow(QMainWindow):
         self.ui.button_apply.clicked.connect(self.timer.apply_timer)
         self.ui.button_clear.clicked.connect(self.timer.clear)
         self.ui.menu_curr_tickets.triggered.connect(self.timer.select_ticket)
+        # Routing
+        self.ui.mapView.map.clicked.connect(self.ui.mapView.routing.pick_marker)
+        self.ui.button_from.clicked.connect(self.ui.mapView.routing.pick_strt)
+        self.ui.button_to.clicked.connect(self.ui.mapView.routing.pick_end)
+        self.ui.button_via.clicked.connect(self.ui.mapView.routing.pick_via)
+        self.ui.button_toggle_route.clicked.connect(self.ui.mapView.routing.
+                                                    toggle_route)
+        self.ui.from_box.editingFinished.connect(self.ui.mapView.routing.
+                                                 postcode_convert)
+        self.ui.to_box.editingFinished.connect(self.ui.mapView.routing.
+                                               postcode_convert)
 
     def eventFilter(self, source, event):
         """Detects TicketNotes losing focus and saves its contents to the
@@ -156,6 +171,8 @@ class MainWindow(QMainWindow):
         self.ui.trackTable.setSortingEnabled(True)
         self.ui.yearView.setItemDelegate(self.dateDisplay)
         self.ui.button_start_pause.setEnabled(False)
+        self.ui.button_add_ticket.setEnabled(False)
+        self.ui.button_sel_ticket.setEnabled(False)
         self.init_model()
         self.setup_year(True)
         dataIO.open()
@@ -249,35 +266,44 @@ class MainWindow(QMainWindow):
     def get_curr_time(self, time):
         """Displays time slider current value, gets tracker
         coordinates"""
-        gpsAnalyser = GpsAnalyser(self)
-        display = self.timeLine.get_curr_time(time, self.point_list)
-        self.ui.time_display.setText(display[0])
-        self.ui.time_display.setAlignment(Qt.Qt.AlignCenter)
-        bisect = gpsAnalyser.bisect(display[1], display[2])
-        coords = gpsAnalyser.get_coords(bisect[0], bisect[1], bisect[2])
-        posn = gpsAnalyser.find_posn(coords)
-        # posn = [dest.latitude, dest.longitude, bearing, distance]
-        self.ui.mapView.draw_tracker(posn)
-        # Set up points for tracker trails
-        trail_points = gpsAnalyser.get_trail_points(display[1])
-        self.ui.mapView.get_trail_pairs(trail_points[0], trail_points[1])
-        self.timeLine.set_time_posn(posn[0], posn[1])
+        if len(self.point_list) > 0:
+            gpsAnalyser = GpsAnalyser(self)
+            display = self.timeLine.get_curr_time(time, self.point_list)
+            self.ui.time_display.setText(display[0])
+            self.ui.time_display.setAlignment(Qt.Qt.AlignCenter)
+            bisect = gpsAnalyser.bisect(display[1], display[2])
+            coords = gpsAnalyser.get_coords(bisect[0], bisect[1], bisect[2])
+            posn = gpsAnalyser.find_posn(coords)
+            # posn = [dest.latitude, dest.longitude, bearing, distance]
+            self.ui.mapView.draw_tracker(posn)
+            # Set up points for tracker trails
+            trail_points = gpsAnalyser.get_trail_points(display[1])
+            self.ui.mapView.get_trail_pairs(trail_points[0], trail_points[1])
+            self.timeLine.set_time_posn(posn[0], posn[1])
 
     def select_date(self, indices):
         """Load tickets from selected date"""
         index = indices[0]
         day = self.model.itemFromIndex(index)
-        date = day.child(0, 0).data()  # QDate, e.g. (2016, 7, 15)
-        self.ui.date_display.setText(date.toString())
-        self.clear_date()
-        # Colour in tickets:
-        self.model.set_year(self.year, False)
-        self.selected_indices = indices
-        self.timeLine.zero_time_list()
-        self.get_track(date)
-        self.display_tickets()
-        self.ui.jobTickets.clearSelection()
-        self.ui.expensesTable.clearSelection()
+        if day.child(0, 0):
+            date = day.child(0, 0).data()  # QDate, e.g. (2016, 7, 15)
+            self.ui.date_display.setText(date.toString())
+            self.clear_date()
+            # Colour in tickets:
+            self.model.set_year(self.year, False)
+            self.selected_indices = indices
+            self.timeLine.zero_time_list()
+            self.get_track(date)
+            self.ui.button_add_ticket.setEnabled(True)
+            self.display_tickets()
+            self.ui.jobTickets.clearSelection()
+            self.ui.expensesTable.clearSelection()
+            if date.toString('yyyy,MM,dd') == time.strftime("%Y,%m,%d"):
+                self.ui.button_sel_ticket.setEnabled(True)
+            else:
+                self.ui.button_sel_ticket.setEnabled(False)
+                self.ui.button_sel_ticket.setText("Ticket")
+                self.ui.button_start_pause.setEnabled(False)
 
     def get_track(self, date):
         """Gets GPS data for selected day and displays it"""

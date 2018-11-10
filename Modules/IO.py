@@ -1,8 +1,8 @@
+import os.path
 import shutil
 import sys
 import xml.etree.ElementTree as ET
 
-import os.path
 from PyQt5 import QtGui
 
 sys.path.append("./Modules")

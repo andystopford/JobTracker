@@ -39,13 +39,24 @@ class Ui_mainWindow:
         self.coord_display = QtWidgets.QLabel('test')
         self.date_display = QtWidgets.QLabel('Date')
         self.time_slider = QtWidgets.QSlider(Qt.Qt.Horizontal)
+        # Map control group
         self.menu_track_cols = QtWidgets.QMenu()
         self.button_map = QtWidgets.QRadioButton("Map")
         self.button_terrain = QtWidgets.QRadioButton("Terrain")
         self.button_sat = QtWidgets.QRadioButton("Satellite")
-        #self.button_to = QtWidgets.QPushButton("Pick To")
-        self.button_clear_route = QtWidgets.QPushButton("Clear")
-        self.button_route = QtWidgets.QPushButton("Route")
+
+        self.from_box = QtWidgets.QLineEdit()
+        self.from_box.setPlaceholderText('From Postcode')
+        self.to_box = QtWidgets.QLineEdit()
+        self.to_box.setPlaceholderText('To Postcode')
+        self.button_from = QtWidgets.QPushButton("From")
+        self.button_via = QtWidgets.QPushButton("Via")
+        self.button_via.setEnabled(False)
+        self.button_to = QtWidgets.QPushButton("To")
+        self.button_toggle_route = QtWidgets.QPushButton("Hide")
+        self.label_miles = QtWidgets.QLabel()
+        self.label_miles.setAlignment(QtCore.Qt.AlignCenter)
+
         self.from_box = QtWidgets.QLineEdit()
         self.to_box = QtWidgets.QLineEdit()
 
@@ -58,7 +69,7 @@ class Ui_mainWindow:
         self.from_display = QtWidgets.QTextEdit()
         self.time_display = QtWidgets.QTextEdit()
         self.to_display = QtWidgets.QTextEdit()
-        # self.jobTickets = QtWidgets.QListWidget()
+        # Ticket controls
         self.button_add_ticket = QtWidgets.QPushButton("Add Ticket")
         self.menu_tickets = QtWidgets.QMenu()
         self.button_add_ticket.setMenu(self.menu_tickets)
@@ -147,6 +158,8 @@ class Ui_mainWindow:
         label_job_id.setAlignment(QtCore.Qt.AlignCenter)
         label_job_notes = QtWidgets.QLabel('Notes')
         label_job_notes.setAlignment(QtCore.Qt.AlignCenter)
+        label_miles = QtWidgets.QLabel('Miles')
+        label_miles.setAlignment(QtCore.Qt.AlignCenter)
 
         # the basic layout:
         box = QtWidgets.QGridLayout()
@@ -176,24 +189,29 @@ class Ui_mainWindow:
         map_ctrl_box.setMaximumWidth(275)
         map_ctrl_box_layout = QtWidgets.QVBoxLayout()
         map_ctrl_box.setLayout(map_ctrl_box_layout)
+
         map_ctrl_box_layout.addWidget(self.button_map)
         map_ctrl_box_layout.addWidget(self.button_terrain)
         map_ctrl_box_layout.addWidget(self.button_sat)
 
         routing_group = QtWidgets.QGroupBox('Routing')
+        routing_group.setMaximumHeight(155)
         routing_layout = QtWidgets.QVBoxLayout()
         routing_group.setLayout(routing_layout)
-        route_input_layout = QtWidgets.QHBoxLayout()
-        route_ctrls_layout = QtWidgets.QHBoxLayout()
 
-        routing_layout.addLayout(route_input_layout)
+        route_ctrls_layout = QtWidgets.QGridLayout()
         routing_layout.addLayout(route_ctrls_layout)
+
         map_ctrl_box_layout.addWidget(routing_group)
 
-        route_input_layout.addWidget(self.from_box)
-        route_input_layout.addWidget(self.to_box)
-        route_ctrls_layout.addWidget(self.button_route)
-        route_ctrls_layout.addWidget(self.button_clear_route)
+        route_ctrls_layout.addWidget(self.button_from, 0, 0)
+        route_ctrls_layout.addWidget(self.button_to, 0, 1)
+        route_ctrls_layout.addWidget(self.from_box, 1, 0)
+        route_ctrls_layout.addWidget(self.to_box, 1, 1)
+        route_ctrls_layout.addWidget(self.button_via, 2, 0)
+        route_ctrls_layout.addWidget(self.button_toggle_route, 2, 1)
+
+        routing_layout.addWidget(self.label_miles)
 
         track_table_group = QtWidgets.QGroupBox('Tracks')
         track_table_layout = QtWidgets.QVBoxLayout()

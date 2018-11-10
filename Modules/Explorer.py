@@ -432,19 +432,40 @@ class Explorer(QtWidgets.QMainWindow):
             self.ui.info_display.append('No data to write')
 
     def delete_file(self):
+        """Deletes selected file from tracker SD card"""
         sel_files = self.ui.file_lister.selectedItems()
         for f in sel_files:
             row = self.ui.file_lister.row(f)
             entry = f.text()
             name = entry.split(" ")
             name = name[0]
+            full_name = name
             if name[0] == '0':
                 name = name[1:]
-            handshake = '<' + 'D' + name + '>'
-            msg = handshake.encode('ascii')
-            self.ser.write(msg)
-            self.ui.file_lister.takeItem(row)
-            self.ui.info_display.append(name + ' Deleted')
+            ok_delete = self.check_deletion(full_name)
+            if ok_delete:
+                handshake = '<' + 'D' + name + '>'
+                msg = handshake.encode('ascii')
+                self.ser.write(msg)
+                self.ui.file_lister.takeItem(row)
+                self.ui.info_display.append(full_name + ' Deleted')
+            else:
+                self.ui.info_display.append(full_name + ' Delete Canceled')
+
+    def check_deletion(self, name):
+        """Qmessage box asks for confirmation before deleting file"""
+        title = "Deleting " + name
+        reply = QtWidgets.QMessageBox.question(self, title, "Confirm Deletion?",
+                                               QtWidgets.QMessageBox.Yes |
+                                               QtWidgets.QMessageBox.No |
+                                               QtWidgets.QMessageBox.Cancel)
+        if reply == QtWidgets.QMessageBox.Cancel:
+            return False
+        elif reply == QtWidgets.QMessageBox.Yes:
+            return True
+        elif reply == QtWidgets.QMessageBox.No:
+            return False
+
 
 
 ###############################################################################

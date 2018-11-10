@@ -5,7 +5,6 @@ from .layer.tile import TileLayer
 from .layer.vector import Circle, CircleMarker, Polygon, Polyline, Rectangle
 from .map import Map
 
-
 class L:
     """
     Leaflet namespace that holds reference to all the leaflet objects
@@ -22,4 +21,6 @@ class L:
     layerGroup = LayerGroup
     featureGroup = FeatureGroup
     control = Control
+
+
 

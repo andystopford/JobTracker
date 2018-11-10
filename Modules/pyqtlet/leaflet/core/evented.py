@@ -86,7 +86,6 @@ class Evented(QObject):
         :param str leafletJsObject: javascript code that creates the
             leaflet object
         '''
-        # Creates the js object on the mapWidget page
         js = 'var {name} = {jsObject}'.format(name=self.jsName, 
                 jsObject=leafletJsObject)
         self.runJavaScript(js)

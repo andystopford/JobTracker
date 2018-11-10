@@ -1,4 +1,3 @@
-import time
 
 from PyQt5 import QtCore, QtGui
 from Ticket import Track
@@ -43,7 +42,8 @@ class Timer:
 
     def get_today(self):
         """Get list of today's tickets from the model"""
-        date = time.strftime("%d/%m/%Y")
+        date = QtCore.QDate.currentDate()
+        date = date.toString('dd/MM/yyyy')
         year = int(date[6:10])
         year_instance = Year(self, year)
         day = int(date[0:2])
@@ -82,9 +82,9 @@ class Timer:
         self.qTimer.stop()
         self.total_time += elapsed
         # divide by sixty to get minutes - comment out for testing
-        #minutes = int(self.total_time/60)
-        # Comment out next if not testing
-        minutes = self.total_time
+        minutes = int(self.total_time/60)
+        # Comment out next line if not testing
+        #minutes = self.total_time
         disp_time = TimeConverter.get_time_hrs_mins(self, minutes)
         self.parent.ui.time_total.setText(disp_time)
         self.parent.ui.button_start_pause.clicked.disconnect(self.pause)

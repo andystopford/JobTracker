@@ -110,6 +110,7 @@ class Map(Evented):
         if layer not in self._layers:
             # TODO Should we raise a ValueError here? Or just return
             return
+
         self._layers.remove(layer)
         layer.map = None
         js = 'map.removeLayer({layerName})'.format(layerName=layer.layerName)

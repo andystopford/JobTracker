@@ -1,4 +1,5 @@
 import csv
+import os.path
 import xml.etree.ElementTree as ET
 from bisect import bisect_left  # For getting closest numbers in list
 from bisect import bisect_right
@@ -8,7 +9,6 @@ from math import *
 
 import geopy
 import geopy.distance
-import os.path
 import pytz
 from TimeConverter import TimeConverter as TC
 from TrackPoint import TrackPoint

@@ -1,4 +1,4 @@
-import sys
+from collections import OrderedDict
 
 import matplotlib.cm as cm
 import matplotlib.colors
@@ -6,8 +6,6 @@ from PostcodesIO import PostcodeIO
 from PyQt5.QtWidgets import QVBoxLayout, QWidget
 from mapbox import Directions
 from pyqtlet import L, MapWidget
-
-sys.path.append('./Scripts/')
 
 
 class MapView(QWidget):
@@ -61,44 +59,12 @@ class MapView(QWidget):
         self.pcode_grp = L.layerGroup()
         self.map.addLayer(self.pcode_grp)
 
-        self.routing_grp = L.layerGroup()
-        self.map.addLayer(self.routing_grp)
+        self.route_layer_grp = L.layerGroup()
+        self.map.addLayer(self.route_layer_grp)
 
         self.colour_index = 0
-        self.colormap = cm.autumn
 
-        #self.map.moved.connect(self.test2)
-        #self.map.zoom.connect(self.test1)
-        #self.map.clicked.connect(self.get_clicked)
-
-    def test(self, event):
-        print(event)
-        self.map.getState(self.get_state)
-
-    def get_state(self, e):
-        """Gets map state"""
-        print(e)
-
-    def test1(self, e):
-        print(e['type'].toString())
-
-    def test2(self, e):
-        """Get the name of the pyqt signal e.g. 'Moved' """
-        mov = list(e.values())
-        for obj in mov:
-            print('obj', obj.toString())
-        print(mov)
-
-    def test3(self, e):
-        print('test3', e)
-
-    def get_clicked(self, event):
-        """Get latlng from clicked point"""
-        # Extract QJsonValue object with key 'latlng'
-        latlng = event['latlng']
-        # Get the dictionary containing keys 'lat' and 'lng'
-        latlng = latlng.toVariant()
-        print(latlng)
+        self.routing = Routing(self)
 
     def add_osm_map(self):
         """Load standard OSM vector map"""
@@ -135,13 +101,11 @@ class MapView(QWidget):
     def zoom_tracker(self):
         """Zooms to tracker
         """
-        latlng = self.tracker.getLatlng()
-        self.map.setView(latlng, 15)
+        markerCallback = MarkerCallback(self, self.tracker)
+        markerCallback.get_tracker_latlng()
 
     def marker_calc(self, time, time_events):
         """time_events = list of lat longs"""
-        #pairs = [time_events[i:i + 2] for i in range(0, len(time_events), 2)]
-        #print(pairs)
         if len(time_events) == 1:
             self.draw_start(time_events[0], time)
         else:
@@ -167,7 +131,6 @@ class MapView(QWidget):
         """Breaks TrackPoint list into overlapping pairs and draws a
                 polyline for each pair, coloured from a cmap gradient"""
         pair_list = []
-        cmap = self.colormap
         pairs = [point_list[i:i + 2] for i in range(0, len(point_list), 1)]
         for pair in pairs:
             # Pairs of TrackPoints
@@ -178,9 +141,6 @@ class MapView(QWidget):
                 lat = str(item.get_lat())
                 lon = str(item.get_lon())
                 latlngs.append([lat, lon])
-            #colour = cmap(i / len(pair_list))
-            # Convert to Hex:
-            #colour = self.convert_colour(colour)
             track_layer = L.polyline(latlngs, {'color': '#aa82ff'})
             self.track_layer_grp.addLayer(track_layer)
 
@@ -195,7 +155,6 @@ class MapView(QWidget):
         self.follower_layer_grp.clearLayers()
         b_pair_list = []
         a_pair_list = []
-        #bef_cols = ["#ff7e7e", "red"]
         bef_cols = ["#ffdfdd", "red"]
         aft_cols = ["blue", "#f4f3ff"]
         cmap_before = matplotlib.colors.LinearSegmentedColormap.from_list\
@@ -233,7 +192,7 @@ class MapView(QWidget):
 
     def add_segment(self, leg_points, col=None):
         """Adds tracks from previous tickets"""
-        colour_list = ['#fda07f', '#cd82f2', '#7fd4fd', '#8bf282', '#fde083']
+        colour_list = ['#7fd4fd', '#8bf282', '#fd8248', '#cd82f2', '#fde083']
         if not col:
             curr_colour = colour_list[self.colour_index]
         else:
@@ -251,45 +210,6 @@ class MapView(QWidget):
             self.colour_index = 0
         return curr_colour
 
-    def route(self):
-        """Calculate route between two postcodes"""
-        pio = PostcodeIO()
-        postcode_from = self.parent.ui.from_box.text()
-        go_from = pio.get_latlng(postcode_from)
-        if self.parent.ui.to_box.text():
-            postcode_to = self.parent.ui.to_box.text()
-            go_to = pio.get_latlng(postcode_to)
-            self.pcode_grp.clearLayers()
-            self.routing_grp.clearLayers()
-            self.mapbox_routing(go_from, go_to)
-        else:
-            self.pcode_grp.clearLayers()
-            pcode_marker = L.marker(go_from)
-            pcode_marker.bindPopup(postcode_from)
-            self.pcode_grp.addLayer(pcode_marker)
-            #self.map.open_popup()
-
-    def mapbox_routing(self, go_from, go_to):
-        """Get route using mapbox service"""
-        service = Directions(access_token='pk.eyJ1IjoiYW5keXN0b3BwcyIsImEiO'
-                                          'iJjaXUwN2J4anEwMDAxMzNrZTQxeTVpe'
-                                          'Gx1In0.BqZQL3MpuDI5kPi0LvZhkQ')
-        origin = {'type': 'Feature', 'geometry':
-            {'type': 'Point', 'coordinates': [go_from[1], go_from[0]]}}
-
-        destination = {'type': 'Feature', 'geometry':
-            {'type': 'Point', 'coordinates': [go_to[1], go_to[0]]}}
-        response = service.directions([origin, destination], 'mapbox/driving')
-        driving_routes = response.geojson()
-        route = driving_routes['features'][0]['geometry']['coordinates']
-        route = [list(elem) for elem in route]  # Convert to list of lists:
-        track_layer = L.polyline(route, {'color': '#FF00FF'})
-        self.routing_grp.addLayer(track_layer)
-
-    def clear_route(self):
-        self.pcode_grp.clearLayers()
-        self.routing_grp.clearLayers()
-
     def set_colormap(self, colormap):
         """Colourmaps for graduated colour in tracks"""
         colormap_list = [cm.autumn, cm.brg, cm.hsv, cm.jet]
@@ -301,3 +221,224 @@ class MapView(QWidget):
                                     int(255 * colour[2]))
         colour = str(colour)
         return colour
+
+
+class Routing:
+    """Mapbox routing from pairs of postcodes or picked points. An
+    intermediate point 'Via' can be picked."""
+    def __init__(self, parent):
+        self.parent = parent
+        self.home = [51.1595954895, 0.260109901428]
+        self.latlng_list = []
+
+        # Set up dictionary of form {layer:object}, e.g. {l1:self.marker_start}
+        self.routing_markers = {}
+        self.marker_start = L.marker([0, 0], {'draggable': 'true',
+                                              'title': 'Start'}, name='Start')
+        layer_name = self.marker_start.getLayerName()  # l1
+        self.routing_markers[layer_name] = self.marker_start
+        self.marker_via = L.marker([0, 0], {'draggable': 'true',
+                                            'title': 'Via'}, name='Via')
+        self.marker_end = L.marker([0, 0], {'draggable': 'true',
+                                            'title': 'End'}, name='End')
+        layer_name = self.marker_end.getLayerName()
+        self.routing_markers[layer_name] = self.marker_end
+        # Create a layer group for the markers and add to the map
+        self.routing_marker_grp = L.layerGroup()
+        # Add the start and end markers to the markers' layer group
+        self.routing_marker_grp.addLayer(self.marker_start)
+        self.routing_marker_grp.addLayer(self.marker_end)
+
+        self.parent.map.addLayer(self.routing_marker_grp)
+
+        self.latlng_list = []  # LatLngs of mrkers
+        self.enable_pick_via = False
+        self.enable_pick_strt = False
+        self.enable_pick_end = False
+        self.route_vis = True
+        self.marker_start.dragend.connect(self.dragged)
+        self.marker_end.dragend.connect(self.dragged)
+        self.marker_via.dragend.connect(self.recalc_route)
+
+    def postcode_convert(self):
+        """Add start and (optionally) end markers to map. If both present
+        calls self.recalc_route. n.b. Doesn't allow for picked markers -
+        autofill window on pick?"""
+        pio = PostcodeIO()
+        if self.parent.parent.ui.from_box.text():
+            postcode_start = self.parent.parent.ui.from_box.text()
+            start = pio.get_latlng(postcode_start)
+            self.parent.map.addLayer(self.routing_marker_grp)
+            self.marker_start.setLatLng(start)
+            if self.parent.parent.ui.to_box.text():
+                postcode_end = self.parent.parent.ui.to_box.text()
+                end = pio.get_latlng(postcode_end)
+                self.marker_end.setLatLng(end)
+                self.recalc_route()
+                self.parent.parent.ui.button_via.setEnabled(True)
+
+    def dragged(self, event):
+        """After dragging Start or End marker instanciates MarkerCallback to
+        get the marker postcode from its new LatLng, and display via
+        self.display_pcode. The route (if present) is then recalculated."""
+        marker = self.routing_markers[event]
+        markerCallback = MarkerCallback(self, marker)
+        markerCallback.get_latlng()
+        self.recalc_route()
+
+    def display_pcode(self, pcode, name):
+        """Display current postcode (if any) for dragged marker"""
+        if name == 'Start':
+            self.parent.parent.ui.from_box.setText(pcode)
+        if name == 'End':
+            self.parent.parent.ui.to_box.setText(pcode)
+
+    def recalc_route(self):
+        """Sends (all) marker latlngs to self.fill_latlng_list callback. At
+        end of drag sorts self.routing_markers into correct order (so that mid
+        marker is inbetween start and end) """
+        self.latlng_list = []
+        self.routing_markers = OrderedDict(sorted(self.routing_markers.items()))
+        for key in self.routing_markers:
+            marker = self.routing_markers[key]
+            marker.getLatLng(self.fill_latlng_list)
+
+    def fill_latlng_list(self, callback):
+        """Makes a list of marker latlngs"""
+        lat = callback['lat']
+        lng = callback['lng']
+        latlng = [lat, lng]
+        self.latlng_list.append(latlng)
+        self.test_list()
+
+    def test_list(self):
+        """Checks we have all the markers' latlngs and that they have values
+        assigned (i.e. not [0, 0]), and if so, sends them to Mapbox for
+        routing"""
+        num = len(self.routing_marker_grp.layers)
+        if len(self.latlng_list) > 1:
+            if self.latlng_list[1] != [0, 0]:
+                if len(self.latlng_list) == num:
+                    self.use_mapbox(self.latlng_list)
+
+    def pick_strt(self):
+        self.enable_pick_strt = True
+
+    def pick_end(self):
+        self.enable_pick_end = True
+
+    def pick_via(self):
+        self.enable_pick_via = True
+
+    def pick_marker(self, event):
+        """Moves the enabled marker to the picked position and adds it to
+        self.routing_marker_grp"""
+        if self.enable_pick_strt:
+            layer_name = self.marker_start.getLayerName()
+            self.routing_markers[layer_name] = self.marker_start
+            latlng = event['latlng']
+            lat = latlng['lat']
+            lng = latlng['lng']
+            latlng = [lat, lng]
+            self.marker_start.setLatLng(latlng)
+            pio = PostcodeIO()
+            postcode = pio.get_postcode(lng, lat)
+            self.parent.parent.ui.from_box.setText(postcode)
+            self.enable_pick_strt = False
+        elif self.enable_pick_end:
+            layer_name = self.marker_end.getLayerName()
+            self.routing_markers[layer_name] = self.marker_end
+            latlng = event['latlng']
+            lat = latlng['lat']
+            lng = latlng['lng']
+            latlng = [lat, lng]
+            self.marker_end.setLatLng(latlng)
+            self.recalc_route()
+            pio = PostcodeIO()
+            postcode = pio.get_postcode(lng, lat)
+            self.parent.parent.ui.to_box.setText(postcode)
+            self.parent.parent.ui.button_via.setEnabled(True)
+            self.enable_pick_end = False
+        elif self.enable_pick_via:
+            layer_name = self.marker_via.getLayerName()
+            self.routing_markers[layer_name] = self.marker_via
+            latlng = event['latlng']
+            lat = latlng['lat']
+            lng = latlng['lng']
+            latlng = [lat, lng]
+            self.marker_via.setLatLng(latlng)
+            self.routing_marker_grp.addLayer(self.marker_via)
+            self.recalc_route()
+            self.enable_pick_via = False
+            self.parent.parent.ui.button_via.setEnabled(False)
+
+    def use_mapbox(self, coords):
+        """Mapbox routing. n.b. input latlngs need to be reversed """
+        rev_coords = []
+        for item in coords:
+            item = list(reversed(item))
+            rev_coords.append(item)
+        service = Directions(access_token='pk.eyJ1IjoiYW5keXN0b3BwcyIsImEiO'
+                                          'iJjaXUwN2J4anEwMDAxMzNrZTQxeTVpe'
+                                          'Gx1In0.BqZQL3MpuDI5kPi0LvZhkQ')
+        response = service.directions(rev_coords, 'mapbox/driving',
+                                      continue_straight=False)
+        driving_routes = response.geojson()
+        metres = driving_routes['features'][0]['properties']['distance']
+        miles = metres * 0.000621371
+        # print('distance', round(miles, 2))
+        self.parent.parent.ui.label_miles.setText\
+            ('Distance  ' + str(round(miles, 2)) + '  ' + 'Miles')
+        route = driving_routes['features'][0]['geometry']['coordinates']
+        #print(route)  # A list of tuples
+        self.route(route)
+
+    def route(self, route):
+        """Draw route"""
+        self.parent.route_layer_grp.clearLayers()
+        route = [list(elem) for elem in route]  # Convert to list of lists:
+        route_layer = L.polyline(route, {'weight': 2, 'color': '#FF00FF',
+                                         'smoothFactor': 0.5})
+        self.parent.route_layer_grp.addLayer(route_layer)
+        route_layer.clicked.connect(self.pick_marker)
+
+    def toggle_route(self):
+        """Hides/Shows route"""
+        if self.route_vis:
+            for layer in self.routing_marker_grp._layers:
+                layer.setOpacity(0)
+            self.parent.route_layer_grp.clearLayers()
+            self.route_vis = False
+            self.parent.parent.ui.button_toggle_route.setText('Show')
+        else:
+            for layer in self.routing_marker_grp._layers:
+                layer.setOpacity(1)
+            self.recalc_route()
+            self.route_vis = True
+            self.parent.parent.ui.button_toggle_route.setText('Hide')
+
+
+class MarkerCallback:
+    """Class for handling marker callbacks TODO Needs tidying"""
+    def __init__(self, parent, marker):
+        self.parent = parent
+        self.marker = marker
+        self.postcode = ''
+
+    def get_latlng(self):
+        self.marker.getLatLng(self.postcode_callback)
+
+    def postcode_callback(self, callback):
+        pio = PostcodeIO()
+        lat = callback['lat']
+        lng = callback['lng']
+        self.postcode = pio.get_postcode(lng, lat)
+        self.parent.display_pcode(self.postcode, self.marker.name)
+
+    def get_tracker_latlng(self):
+        self.marker.getLatLng(self.tracker_callback)
+
+    def tracker_callback(self, callback):
+        lat = callback['lat']
+        lng = callback['lng']
+        self.parent.map.setView([lat, lng], 15)
