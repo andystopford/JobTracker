@@ -1,5 +1,4 @@
 import os.path
-import shutil
 import sys
 import xml.etree.ElementTree as ET
 
@@ -14,28 +13,16 @@ from Model import*
 class DataIO:
     def __init__(self, parent):
         """Module to read/write disc files"""
-        self.path = './Logs'
+        self.path = './UserData/Logs'
         self.parent = parent
         # TODO This path is for testing only! Implement Prefs in Explorer
-        self.user_path = "/home/andy/Projects/Programming/Python/JobTracker2" \
-                         "/JobTrackerUser/"
-
-    def get_gpx(self):
-        """Copies .gpx files from Dropbox to ./Logs directory"""
-        # TODO Implement path Prefs in Explorer
-        print('Module IO.get_gpx() disconnected')
-        return
-        source_path = '/home/andy/Dropbox/Apps/GPSLogger for Android/'
-        source = os.listdir(source_path)
-        for gpx_file in source:
-            if gpx_file.endswith('gpx'):
-                if not os.path.isfile('./Logs/' + gpx_file):
-                    shutil.copy2(source_path + gpx_file, './Logs')
+        print("WARNING: Test path set for JobTrackerUser in IO.py")
+        self.user_path = "./UserData/"
 
     def get_logs(self, curr_year):
         """ Get log files for curr_year (from filename, e.g. 20150829.gpx)"""
         log_list = []
-        for log_file in os.listdir('Logs'):
+        for log_file in os.listdir(self.path):
             if not log_file.startswith('.'):  # filter unix hidden files
                 year = int(log_file[0:4])
                 if year == curr_year:

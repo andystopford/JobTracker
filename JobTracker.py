@@ -10,7 +10,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, see <http://www.gnu.org/licenses/>.
 #
-# JobTracker version 2.5.0 21/09/18
+# JobTracker version 2.5.1 15/03/19
 #######################################################################
 import sys
 sys.path.append("./Modules")
@@ -164,7 +164,6 @@ class MainWindow(QMainWindow):
     def startup(self):
         """Get GPS data and set up models"""
         dataIO = DataIO(self)
-        dataIO.get_gpx()
         self.table_proxy_model.setSourceModel(self.trackModel)
         self.ui.trackTable.setModel(self.table_proxy_model)
         self.ui.trackTable.set_selection_model(self.trackModel)
