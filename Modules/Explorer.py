@@ -8,9 +8,9 @@ from Explorer_UI import Explorer_Ui
 from TimeConverter import *
 from Year import *
 import time
+from datetime import datetime
 import serial
 import serial.tools.list_ports
-#from serial import*
 import csv
 
 
@@ -25,7 +25,7 @@ class Explorer(QtWidgets.QMainWindow):
         self.parent = parent
         # TODO This path is for testing only!
         self.user_path = "/home/andy/Projects/Programming/Python/JobTracker2" \
-                         "/JobTrackerUser/"
+                         "/UserData/"
         # Signals
         #self.ui.tabWidget.currentChanged.connect(self.tab_changed)
         self.ui.name_clear_button.clicked.connect(self.clear_names)
@@ -278,7 +278,8 @@ class Explorer(QtWidgets.QMainWindow):
     def get_chk_box(self):
         """Prepares a check box for insertion in table"""
         chk_box = QtWidgets.QTableWidgetItem()
-        chk_box.setFlags(QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled)
+        chk_box.setFlags(QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.
+                         ItemIsEnabled)
         chk_box.setCheckState(QtCore.Qt.Checked)
         return chk_box
 
@@ -347,7 +348,7 @@ class Explorer(QtWidgets.QMainWindow):
     def read_file_list(self):
         """Makes three attempts to download file list"""
         data = self.ser.readline().strip()
-        print(data)
+        file_list = []
         count = 0
         while len(data) == 0:
             if count < 3:
@@ -365,28 +366,49 @@ class Explorer(QtWidgets.QMainWindow):
                 if len(text) > 9:
                     if text[5] == '.':
                         text = '0' + text
-                    self.write_file_list(text)
+                    file_list.append(text)
                 data = self.ser.readline()
+        self.sort(file_list)
 
-    def write_file_list(self, fname):
-        file_item = QtWidgets.QListWidgetItem()
-        file_item.setText(fname)
-        self.ui.file_lister.addItem(file_item)
+    def sort(self, file_list):
+        """Sort files on sd card in chronological order, most recent first"""
+        file_dict = {}
+        dates = []
+        for file in file_list:
+            fname = file[0:6]
+            dates.append(fname)
+            file_dict[fname] = file
+        sorted_dates = sorted(dates, key=self.get_date_key)
+        sorted_dates.reverse()
+        self.list_track_files(sorted_dates, file_dict)
+
+    def get_date_key(self, date_key):
+        """Extract date from file name"""
+        date_key = datetime.strptime(date_key, '%d%m%y').date()
+        return date_key
+
+    def list_track_files(self, sorted_dates, file_dict):
+        """Display files on sd card"""
+        for fname in sorted_dates:
+            file = file_dict[fname]
+            file_item = QtWidgets.QListWidgetItem()
+            file_item.setText(file)
+            self.ui.file_lister.addItem(file_item)
 
     def download_sel(self):
-        """Handshake to instruct tracker to upload selected file. Allows for
-        names (in the GUI list) which begin with 0"""
-        sel_files = self.ui.file_lister.selectedItems()
-        for f in sel_files:
-            entry = f.text()
-            name = entry.split(" ")
-            name = name[0]
-            if name[0] == '0':
-                name = name[1:]
-            handshake = '<' + name + '>'  # Key word to instruct Arduino
-            msg = handshake.encode('ascii')
-            self.ser.write(msg)
-            self.read(name)
+            """Handshake to instruct tracker to upload selected file. Allows
+            for names (in the GUI list) which begin with 0"""
+            sel_files = self.ui.file_lister.selectedItems()
+            for f in sel_files:
+                entry = f.text()
+                name = entry.split(" ")
+                name = name[0]
+                if name[0] == '0':
+                    name = name[1:]
+                handshake = '<' + name + '>'  # Key word to instruct Arduino
+                msg = handshake.encode('ascii')
+                self.ser.write(msg)
+                self.read(name)
 
     def read(self, name):
         """Makes three attempts to read from serial. If data is received, data
@@ -415,7 +437,8 @@ class Explorer(QtWidgets.QMainWindow):
                 text = text.strip()
                 self.ui.info_display.append(text)
                 self.ui.info_display.moveCursor(QtGui.QTextCursor.End)
-                QtWidgets.QApplication.processEvents()  # Let it process GUI events
+                # Let it process GUI events
+                QtWidgets.QApplication.processEvents()
                 if len(text) > 0:
                     data_list.append([text])
                 if data == b'\r':
@@ -423,7 +446,7 @@ class Explorer(QtWidgets.QMainWindow):
             data = self.ser.readline()
         if len(data_list) > 0:
             d = os.path.dirname(os.getcwd())  # Get path to parent directory
-            log_path = d + '/JobTracker2/Logs/'
+            log_path = d + '/JobTracker2/UserData/Logs/'
             writer = csv.writer(open(log_path + name, 'w+'), delimiter="/")
             for row in data_list:
                 writer.writerow(row)

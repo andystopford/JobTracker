@@ -10,7 +10,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, see <http://www.gnu.org/licenses/>.
 #
-# JobTracker version 2.5.1 15/03/19
+# JobTracker version 2.5.2 05/02/20
 #######################################################################
 import sys
 sys.path.append("./Modules")
@@ -35,8 +35,6 @@ import DarkStyle
 from Completer import Completer
 from Timer import Timer
 from WaitingSpinner import QtWaitingSpinner
-# from Ticket import Track
-
 import time
 
 
@@ -45,7 +43,7 @@ class MainWindow(QMainWindow):
         QWidget.__init__(self, parent)
         self.ui = Ui_mainWindow()
         self.ui.setup_ui(self)
-        self.setWindowTitle("JobTracker 2.5")
+        self.setWindowTitle("JobTracker 2.5.2")
         self.setWindowIcon(QtGui.QIcon('./Icons/shackles.png'))
         self.setStyleSheet(DarkStyle.load_stylesheet_pyqt5())
 
@@ -108,7 +106,8 @@ class MainWindow(QMainWindow):
         self.ui.button_clear.clicked.connect(self.timer.clear)
         self.ui.menu_curr_tickets.triggered.connect(self.timer.select_ticket)
         # Routing
-        self.ui.mapView.map.clicked.connect(self.ui.mapView.routing.pick_marker)
+        self.ui.mapView.map.clicked.connect(self.ui.mapView.routing.
+                                            pick_marker)
         self.ui.button_from.clicked.connect(self.ui.mapView.routing.pick_strt)
         self.ui.button_to.clicked.connect(self.ui.mapView.routing.pick_end)
         self.ui.button_via.clicked.connect(self.ui.mapView.routing.pick_via)

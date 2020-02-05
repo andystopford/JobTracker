@@ -1,7 +1,4 @@
-#from ExpensesTable import *
-#from HoursTable import *
 from PyQt5 import QtWidgets
-#from InfoDisplay import*
 
 
 class Explorer_Ui:
@@ -40,7 +37,6 @@ class Explorer_Ui:
         self.file_lister = QtWidgets.QListWidget()
         self.file_lister.setSelectionMode(QtWidgets.QAbstractItemView.
                                           ExtendedSelection)
-        self.file_lister.setSortingEnabled(True)
         self.info_display = QtWidgets.QTextEdit()
 
         self.tabWidget = QtWidgets.QTabWidget()

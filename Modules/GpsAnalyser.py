@@ -26,8 +26,8 @@ class GpsAnalyser:
         """Read log file and generate list of TrackPoints"""
         point_list = []
         date = date[0:8]
-        csv_file = './Logs/' + date + '.log'
-        gpx_file = './Logs/' + date + '.gpx'
+        csv_file = './UserData/Logs/' + date + '.log'
+        gpx_file = './UserData/Logs/' + date + '.gpx'
         if os.path.exists(csv_file):
             point_list = self.get_csv_data(csv_file, date)
         elif os.path.exists(gpx_file):

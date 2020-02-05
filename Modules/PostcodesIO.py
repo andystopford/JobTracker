@@ -8,6 +8,7 @@ class PostcodeIO:
         self.url = "http://api.postcodes.io/postcodes"
 
     def get_latlng(self, postcode):
+        postcode.replace(' ', '')
         url = str(self.url) + '/' + postcode
         res = urllib.request.urlopen(url).read()
         data = res.decode('utf8')#.replace("'", '"')
